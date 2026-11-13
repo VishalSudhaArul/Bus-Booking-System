@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="many" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto">
+      <path d="M12 7 L2 1 M12 7 L2 13 M12 7 L2 7" stroke="#4b5667" stroke-width="1.5" fill="none"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #b6bdc9; stroke-width: 1.5; }
+      .head { fill: #0f5a4d; }
+      .key { fill: #b45309; }
+      .critical .head { fill: #b91c1c; }
+      .title { fill: #ffffff; font-size: 17px; font-weight: 700; }
+      .f { fill: #202a38; font-size: 13px; }
+      .fk { fill: #1d4ed8; font-size: 13px; }
+      .ix { fill: #667284; font-size: 12px; font-style: italic; }
+      .edge { stroke: #4b5667; stroke-width: 1.5; fill: none; marker-end: url(#many); }
+      .lbl { fill: #4b5667; font-size: 11px; }
+    </style>
+  </defs>
+  <rect width="1600" height="1080" fill="#f6f5f1"/>
+  <text x="40" y="44" font-size="26" font-weight="800" fill="#131b27">BusNest — MongoDB data model</text>
+  <text x="40" y="70" font-size="14" fill="#4b5667">Collections, ObjectId references (arrow points to the "many" side) and the indexes that enforce business rules. Blue = reference, italic = index.</text>
+
+  <!-- Operator -->
+  <g transform="translate(40,110)"><rect class="box" width="270" height="170" rx="10"/><rect class="head" width="270" height="34" rx="10"/><rect class="head" y="20" width="270" height="14"/>
+    <text class="title" x="14" y="23">Operator</text>
+    <text class="f" x="14" y="56">name, code (unique)</text><text class="f" x="14" y="76">contactEmail, contactPhone</text><text class="f" x="14" y="96">description, rating</text><text class="f" x="14" y="116">isActive, timestamps</text>
+    <text class="ix" x="14" y="150">uniq(code)</text></g>
+
+  <!-- User -->
+  <g transform="translate(40,330)"><rect class="box" width="270" height="190" rx="10"/><rect class="head" width="270" height="34" rx="10"/><rect class="head" y="20" width="270" height="14"/>
+    <text class="title" x="14" y="23">User</text>
+    <text class="f" x="14" y="56">name, email (unique), phone</text><text class="f" x="14" y="76">passwordHash (bcrypt, select:false)</text><text class="f" x="14" y="96">role: ADMIN | OPERATOR | PASSENGER</text><text class="fk" x="14" y="116">operatorId → Operator (operators)</text><text class="f" x="14" y="136">isActive, lastLoginAt</text>
+    <text class="ix" x="14" y="172">uniq(email)</text></g>
+
+  <!-- RefreshToken -->
+  <g transform="translate(40,570)"><rect class="box" width="270" height="150" rx="10"/><rect class="head" width="270" height="34" rx="10"/><rect class="head" y="20" width="270" height="14"/>
+    <text class="title" x="14" y="23">RefreshToken</text>
+    <text class="fk" x="14" y="56">userId → User</text><text class="f" x="14" y="76">tokenHash (HMAC), family</text><text class="f" x="14" y="96">expiresAt, revokedAt</text>
+    <text class="ix" x="14" y="122">uniq(tokenHash) · TTL(expiresAt)</text></g>
+
+  <!-- AuditLog -->
+  <g transform="translate(40,770)"><rect class="box" width="270" height="150" rx="10"/><rect class="head" width="270" height="34" rx="10"/><rect class="head" y="20" width="270" height="14"/>
+    <text class="title" x="14" y="23">AuditLog</text>
+    <text class="fk" x="14" y="56">actorId → User</text><text class="f" x="14" y="76">action, entityType, entityId</text><text class="f" x="14" y="96">metadata (non-sensitive), ip</text>
+    <text class="ix" x="14" y="122">(createdAt desc) · (entityType, entityId)</text></g>
+
+  <!-- Bus -->
+  <g transform="translate(400,110)"><rect class="box" width="290" height="170" rx="10"/><rect class="head" width="290" height="34" rx="10"/><rect class="head" y="20" width="290" height="14"/>
+    <text class="title" x="14" y="23">Bus</text>
+    <text class="fk" x="14" y="56">operatorId → Operator</text><text class="f" x="14" y="76">name, registrationNumber (unique)</text><text class="f" x="14" y="96">busType, isAC, amenities[]</text><text class="f" x="14" y="116">layout {template, rows, columns, decks}</text>
+    <text class="ix" x="14" y="150">uniq(registrationNumber)</text></g>
+
+  <!-- Seat -->
+  <g transform="translate(400,330)"><rect class="box" width="290" height="170" rx="10"/><rect class="head" width="290" height="34" rx="10"/><rect class="head" y="20" width="290" height="14"/>
+    <text class="title" x="14" y="23">Seat</text>
+    <text class="fk" x="14" y="56">busId → Bus</text><text class="f" x="14" y="76">seatNumber, deck, row, column</text><text class="f" x="14" y="96">seatType, position, priceModifier</text><text class="f" x="14" y="116">isActive (out of service)</text>
+    <text class="ix" x="14" y="142">uniq(busId, seatNumber)</text><text class="ix" x="14" y="160">uniq(busId, deck, row, column)</text></g>
+
+  <!-- Stop -->
+  <g transform="translate(780,110)"><rect class="box" width="260" height="150" rx="10"/><rect class="head" width="260" height="34" rx="10"/><rect class="head" y="20" width="260" height="14"/>
+    <text class="title" x="14" y="23">Stop</text>
+    <text class="f" x="14" y="56">name, city, cityKey</text><text class="f" x="14" y="76">address, landmark, isActive</text>
+    <text class="ix" x="14" y="122">uniq(cityKey, name)</text></g>
+
+  <!-- Route -->
+  <g transform="translate(1120,110)"><rect class="box" width="440" height="190" rx="10"/><rect class="head" width="440" height="34" rx="10"/><rect class="head" y="20" width="440" height="14"/>
+    <text class="title" x="14" y="23">Route</text>
+    <text class="fk" x="14" y="56">operatorId → Operator</text><text class="f" x="14" y="76">code (unique), sourceCity, destinationCity (+ lower-case keys)</text><text class="f" x="14" y="96">distanceKm, durationMinutes, isActive</text><text class="fk" x="14" y="116">stops[]: { stopId → Stop, type, sequence, offsetMinutes }</text>
+    <text class="ix" x="14" y="150">uniq(code)</text><text class="ix" x="14" y="168">(sourceCityKey, destinationCityKey, isActive) — search</text></g>
+
+  <!-- Trip -->
+  <g transform="translate(780,340)"><rect class="box" width="370" height="190" rx="10"/><rect class="head" width="370" height="34" rx="10"/><rect class="head" y="20" width="370" height="14"/>
+    <text class="title" x="14" y="23">Trip</text>
+    <text class="fk" x="14" y="56">routeId → Route, busId → Bus</text><text class="fk" x="14" y="76">operatorId → Operator (immutable copy)</text><text class="f" x="14" y="96">departureTime, arrivalTime, baseFare</text><text class="f" x="14" y="116">status: SCHEDULED | DEPARTED | COMPLETED | CANCELLED</text>
+    <text class="ix" x="14" y="148">(routeId, departureTime, status) · (operatorId, departureTime)</text><text class="ix" x="14" y="168">uniq(busId, departureTime) + overlap check</text></g>
+
+  <!-- TripStop -->
+  <g transform="translate(1230,370)"><rect class="box" width="330" height="140" rx="10"/><rect class="head" width="330" height="34" rx="10"/><rect class="head" y="20" width="330" height="14"/>
+    <text class="title" x="14" y="23">TripStop</text>
+    <text class="fk" x="14" y="56">tripId → Trip, stopId → Stop</text><text class="f" x="14" y="76">type, sequence, scheduledTime</text>
+    <text class="ix" x="14" y="112">uniq(tripId, sequence)</text></g>
+
+  <!-- Booking -->
+  <g transform="translate(400,600)"><rect class="box" width="400" height="230" rx="10"/><rect class="head" width="400" height="34" rx="10"/><rect class="head" y="20" width="400" height="14"/>
+    <text class="title" x="14" y="23">Booking</text>
+    <text class="f" x="14" y="56">pnr (unique), status: PENDING | CONFIRMED | CANCELLED</text><text class="fk" x="14" y="76">userId → User, tripId → Trip</text><text class="fk" x="14" y="96">operatorId, routeId (snapshots for reports)</text><text class="fk" x="14" y="116">boardingStopId, droppingStopId → Stop</text><text class="f" x="14" y="136">fare {base, seatCharges, tax, total} (server-computed)</text><text class="f" x="14" y="156">payment {SIMULATED, reference, status}</text><text class="f" x="14" y="176">idempotencyKey, requestHash, cancelledAt</text>
+    <text class="ix" x="14" y="210">uniq(pnr) · uniq(userId, idempotencyKey)</text></g>
+
+  <!-- BookingPassenger -->
+  <g transform="translate(40,960)"><rect class="box" width="0" height="0"/></g>
+  <g transform="translate(880,600)"><rect class="box" width="330" height="160" rx="10"/><rect class="head" width="330" height="34" rx="10"/><rect class="head" y="20" width="330" height="14"/>
+    <text class="title" x="14" y="23">BookingPassenger</text>
+    <text class="fk" x="14" y="56">bookingId → Booking, tripId → Trip</text><text class="fk" x="14" y="76">seatId → Seat (+ seatNumber snapshot)</text><text class="f" x="14" y="96">name, age, gender, fare</text>
+    <text class="ix" x="14" y="140">uniq(bookingId, seatId)</text></g>
+
+  <!-- SeatAllocation -->
+  <g transform="translate(400,880)" class="critical"><rect class="box" width="520" height="170" rx="10" style="stroke:#b91c1c;stroke-width:2.5"/><rect class="head" width="520" height="34" rx="10"/><rect class="head" y="20" width="520" height="14"/>
+    <text class="title" x="14" y="23">SeatAllocation — seat-integrity guard</text>
+    <text class="fk" x="14" y="56">tripId → Trip, seatId → Seat, bookingId → Booking</text><text class="f" x="14" y="76">status: ACTIVE | RELEASED, releasedAt</text>
+    <text class="ix" x="14" y="106" style="fill:#b91c1c;font-weight:700;font-style:normal">UNIQUE (tripId, seatId) WHERE status = 'ACTIVE'</text>
+    <text class="ix" x="14" y="126">A second ACTIVE row for the same seat on the same trip is rejected by MongoDB (E11000).</text>
+    <text class="ix" x="14" y="146">Released rows are kept as history; (bookingId) · (tripId, status)</text></g>
+
+  <!-- Cancellation -->
+  <g transform="translate(1000,850)"><rect class="box" width="390" height="190" rx="10"/><rect class="head" width="390" height="34" rx="10"/><rect class="head" y="20" width="390" height="14"/>
+    <text class="title" x="14" y="23">Cancellation</text>
+    <text class="fk" x="14" y="56">bookingId → Booking (unique: cancel once)</text><text class="fk" x="14" y="76">userId, operatorId, cancelledBy → User</text><text class="f" x="14" y="96">reason, hoursBeforeDeparture</text><text class="f" x="14" y="116">refundPercent, refundAmount, cancellationFee</text><text class="f" x="14" y="136">refundStatus, refundReference, cancelledAt</text>
+    <text class="ix" x="14" y="172">uniq(bookingId) · (cancelledAt desc)</text></g>
+
+  <!-- Edges -->
+  <path class="edge" d="M175 280 L175 330"/>
+  <text class="lbl" x="182" y="310">operator staff</text>
+  <path class="edge" d="M175 520 L175 570"/>
+  <path class="edge" d="M310 170 L400 170"/>
+  <path class="edge" d="M545 280 L545 330"/>
+  <path class="edge" d="M310 140 Q720 70 1120 150"/>
+  <path class="edge" d="M1040 180 Q1080 180 1120 230"/>
+  <path class="edge" d="M1340 300 L1000 340"/>
+  <path class="edge" d="M690 200 Q760 260 780 380"/>
+  <path class="edge" d="M1150 440 L1230 440"/>
+  <path class="edge" d="M960 260 Q1200 330 1300 370"/>
+  <path class="edge" d="M900 530 L760 600"/>
+  <path class="edge" d="M310 420 Q360 560 400 650"/>
+  <text class="lbl" x="318" y="560">books</text>
+  <path class="edge" d="M800 680 L880 680"/>
+  <path class="edge" d="M600 830 L600 880"/>
+  <path class="edge" d="M800 760 Q900 820 1000 900"/>
+  <path class="edge" d="M690 470 Q740 610 1000 600"/>
+  <path class="edge" d="M420 500 C350 600, 350 800, 420 880"/>
+  <text class="lbl" x="318" y="780">seat held</text>
+</svg>
