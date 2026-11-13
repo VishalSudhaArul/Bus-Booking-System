@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx scripts/seed.ts",
-    "db:init": "tsx scripts/init-indexes.ts"
+    "db:init": "tsx scripts/init-indexes.ts",
+    "dev:memory": "tsx scripts/dev-memory.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

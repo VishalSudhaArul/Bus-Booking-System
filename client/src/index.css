@@ -1,0 +1,118 @@
+@import 'tailwindcss';
+
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   One palette (pine green brand, ink neutrals, amber accent), one type family,
+   one radius and shadow scale. Components only use these tokens. */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-brand-50: #eef8f5;
+  --color-brand-100: #d6eee7;
+  --color-brand-200: #abdccf;
+  --color-brand-300: #77c4b1;
+  --color-brand-400: #43a690;
+  --color-brand-500: #228a75;
+  --color-brand-600: #15705f;
+  --color-brand-700: #0f5a4d;
+  --color-brand-800: #0d473e;
+  --color-brand-900: #0a3a33;
+
+  --color-ink-50: #f6f7f9;
+  --color-ink-100: #eceef2;
+  --color-ink-200: #d8dce3;
+  --color-ink-300: #b6bdc9;
+  --color-ink-400: #8892a2;
+  --color-ink-500: #667284;
+  --color-ink-600: #4b5667;
+  --color-ink-700: #364050;
+  --color-ink-800: #202a38;
+  --color-ink-900: #131b27;
+  --color-ink-950: #0b111a;
+
+  --color-accent-100: #fdf0d5;
+  --color-accent-400: #f6b84f;
+  --color-accent-500: #f2a93b;
+  --color-accent-600: #d98a17;
+
+  --color-canvas: #f6f5f1;
+  --color-surface: #ffffff;
+
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --color-info: #1d4ed8;
+
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(19 27 39 / 0.04), 0 4px 16px -4px rgb(19 27 39 / 0.08);
+  --shadow-raised: 0 2px 4px rgb(19 27 39 / 0.04), 0 16px 40px -12px rgb(19 27 39 / 0.18);
+
+  --animate-fade-up: fade-up 0.35s ease-out both;
+  --animate-pop: pop 0.18s ease-out both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink-900;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  h1, h2, h3, h4 {
+    @apply tracking-tight text-ink-950;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+  button, [role='button'], a, select, input[type='checkbox'], input[type='radio'] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  ::selection {
+    background: var(--color-brand-200);
+  }
+}
+
+@layer utilities {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Printable ticket: print only the element marked .print-area. */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0; margin: 0; box-shadow: none !important; }
+  .no-print { display: none !important; }
+  @page { margin: 12mm; }
+}
