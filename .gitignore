@@ -10,4 +10,3 @@ coverage/
 .vite/
 .vercel/
 *.tsbuildinfo
-.claude/
