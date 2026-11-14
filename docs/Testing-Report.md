@@ -106,7 +106,16 @@ Performed in a browser against `npm run dev:memory` (seeded in-memory replica se
 
 Defects found and fixed during this pass: a `useEffect` returning `window.scrollTo`'s Promise blanked the app in Chromium; the checkout's stale-seat guard redirected to the seat map after a *successful* booking (own seats now BOOKED); grid cards overflowed at 375 px (`min-w-0`); trip card and ticket columns cramped beside the sidebar (moved to `xl`); the manifest date picker did not follow a linked trip.
 
+## Verification on MongoDB Atlas (2026-11-14)
+
+Against the project's Atlas cluster (database ):
+
+- Topology check reported a replica set → **transactions enabled**;  built every index, including  (unique, partial ).
+-  loaded 4 operators, 17 stops, 9 buses, 9 routes, 162 trips, 299 bookings and 16 cancellations; a **second run created nothing**.
+- With the API running on Atlas, a scripted end-to-end run passed **14/14** checks: health + transactions, demo logins for all roles, search, a **10-way race for one seat → exactly one 201 and nine 409 SEAT_ALREADY_BOOKED**, idempotent replay (same PNR), passenger/operator ownership (404/403), manifest contents, live admin dashboard totals, cancellation refund equals the quote, repeat cancellation refused, seats available again.
+- The web app was checked in the browser against the same API.
+
 ## Not covered
 
-- Live MongoDB Atlas cluster and the deployed Render/Vercel URLs (need the owner's credentials) — the code path is identical to the replica-set tests.
+- The deployed Render/Vercel URLs (need the owner's accounts).
 - Load testing beyond the concurrency tests; cross-browser testing beyond Chromium.

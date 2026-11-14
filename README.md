@@ -82,6 +82,8 @@ Open http://localhost:5173. (The first run downloads a MongoDB binary for mongod
      ```bash
      node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
      ```
+   - `MONGODB_DB_NAME` — optional, defaults to `busnest` (used even when the URI has no database path).
+
    The server validates every variable at startup and reports problems by name without printing values.
 3. **Atlas network access** — in Atlas → *Network Access*, allow your IP (and `0.0.0.0/0` for Render, whose outbound IPs vary on the free plan). Create a database user with read/write access.
 4. **Create indexes and seed demo data**

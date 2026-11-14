@@ -1,6 +1,6 @@
 # PROJECT STATUS — BusNest (Bus Booking Management System)
 
-_Last updated: 2026-11-13_
+_Last updated: 2026-11-14_
 
 ## Phases
 
@@ -15,7 +15,7 @@ _Last updated: 2026-11-13_
 | 7 | Cancellation policy and simulated refunds, manifests, occupancy, dashboards, audit log | ✅ Done |
 | 8 | Tests (Vitest/Supertest/RTL), security, responsive checks | ✅ Done |
 | 9 | README, API docs, technical & testing reports, Vercel/Render config | ✅ Done |
-| 10 | Final verification | ✅ Done locally — Atlas connection and live deployment pending (need user input) |
+| 10 | Final verification | ✅ Done locally and on MongoDB Atlas — live deployment pending (needs user accounts) |
 
 ## Verification (2026-11-13)
 
@@ -37,7 +37,7 @@ All items verified by automated tests and/or the browser walkthrough above, exce
 - [x] Server-side authorisation; negative-case tests
 - [x] Frontend build and backend compilation pass
 - [x] Documentation complete; secrets git-ignored; seed reproducible and idempotent
-- [ ] Verified against the user's MongoDB Atlas cluster — **needs `MONGODB_URI` in `server/.env`**
+- [x] Verified against the user's MongoDB Atlas cluster (2026-11-14): transactions enabled, all indexes built, seed run twice (second run created nothing), 14/14 end-to-end API checks incl. a 10-way seat race (1 × 201, 9 × 409)
 - [ ] Deployed to Render/Vercel — **needs the user's accounts; not pushed or deployed**
 
 ## Known issues / limitations
@@ -46,5 +46,5 @@ See README → Known limitations (simulated payments, no seat hold, whole-bookin
 
 ## Next actions
 
-1. User pastes the Atlas connection string into `server/.env` (`MONGODB_URI=`), then: `npm run db:init && npm run seed && npm run dev` in `server/`.
+1. Done: Atlas connected (database `busnest`) and seeded. 10 test passenger accounts `race-tester-1..10@busnest.example.com` were created by the Atlas verification run; their bookings were cancelled.
 2. With approval: add a GitHub remote and push; deploy via `render.yaml` and Vercel (README → Deployment).
