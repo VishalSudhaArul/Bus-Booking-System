@@ -108,10 +108,10 @@ Defects found and fixed during this pass: a `useEffect` returning `window.scroll
 
 ## Verification on MongoDB Atlas (2026-11-14)
 
-Against the project's Atlas cluster (database ):
+Against the project's Atlas cluster (database `busnest`):
 
-- Topology check reported a replica set → **transactions enabled**;  built every index, including  (unique, partial ).
--  loaded 4 operators, 17 stops, 9 buses, 9 routes, 162 trips, 299 bookings and 16 cancellations; a **second run created nothing**.
+- Topology check reported a replica set → **transactions enabled**; `npm run db:init` built every index, including `uniq_active_trip_seat` (unique, partial `{ status: 'ACTIVE' }`).
+- `npm run seed` loaded 4 operators, 17 stops, 9 buses, 9 routes, 162 trips, 299 bookings and 16 cancellations; a **second run created nothing**.
 - With the API running on Atlas, a scripted end-to-end run passed **14/14** checks: health + transactions, demo logins for all roles, search, a **10-way race for one seat → exactly one 201 and nine 409 SEAT_ALREADY_BOOKED**, idempotent replay (same PNR), passenger/operator ownership (404/403), manifest contents, live admin dashboard totals, cancellation refund equals the quote, repeat cancellation refused, seats available again.
 - The web app was checked in the browser against the same API.
 
