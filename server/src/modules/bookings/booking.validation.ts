@@ -7,7 +7,8 @@ import { emailSchema, nameSchema, phoneSchema } from '../auth/auth.validation';
 export const passengerSchema = z.object({
   seatId: objectId,
   name: nameSchema,
-  age: z.number({ invalid_type_error: 'Age must be a number' }).int('Age must be a whole number').min(1, 'Age must be at least 1').max(120, 'Enter a valid age'),
+  // v3 'invalid_type_error' equivalent: custom message only for a wrong type, default message when missing.
+  age: z.number({ error: (issue) => (issue.input === undefined ? undefined : 'Age must be a number') }).int('Age must be a whole number').min(1, 'Age must be at least 1').max(120, 'Enter a valid age'),
   gender: z.enum(GENDERS, { message: 'Select a gender' }),
 });
 
@@ -31,7 +32,7 @@ export const createBookingSchema = z
   });
 
 export const idempotencyKeySchema = z
-  .string({ required_error: 'Idempotency-Key header is required' })
+  .string({ error: (issue) => (issue.input === undefined ? 'Idempotency-Key header is required' : undefined) })
   .trim()
   .regex(/^[A-Za-z0-9_-]{8,64}$/, 'Idempotency-Key must be 8-64 URL-safe characters');
 
