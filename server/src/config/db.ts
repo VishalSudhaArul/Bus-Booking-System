@@ -73,7 +73,7 @@ export async function connectDatabase(options: ConnectOptions = {}): Promise<voi
   for (let attempt = 1; ; attempt += 1) {
     try {
       await mongoose.connect(uri, {
-        dbName: options.dbName,
+        dbName: options.dbName ?? env.MONGODB_DB_NAME,
         serverSelectionTimeoutMS: 10_000,
         maxPoolSize: 20,
         autoIndex: !env.isProduction,
@@ -81,6 +81,12 @@ export async function connectDatabase(options: ConnectOptions = {}): Promise<voi
       break;
     } catch (err) {
       const reason = sanitize((err as Error).message);
+      // Wrong credentials will not fix themselves — fail fast with a clear hint.
+      if (/auth/i.test(reason)) {
+        throw new Error(
+          `MongoDB rejected the credentials (${reason}). Check the database user's name and password in Atlas → Database Access, and URL-encode special characters in the password.`,
+        );
+      }
       if (attempt >= maxAttempts) {
         throw new Error(`Could not connect to MongoDB after ${attempt} attempts: ${reason}`);
       }

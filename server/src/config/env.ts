@@ -39,6 +39,8 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(5000),
   MONGODB_URI: z.string().default(''),
+  // Database to use; applied even when the URI has no /database path.
+  MONGODB_DB_NAME: z.string().regex(/^[A-Za-z0-9_-]{1,38}$/, 'letters, digits, _ or - only').default('busnest'),
   MONGODB_TRANSACTIONS: z.enum(['auto', 'on', 'off']).default('auto'),
   JWT_SECRET: z.string().min(32, 'must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'must be at least 32 characters'),
