@@ -6,8 +6,8 @@ _Run date: 2026-11-13 · Node 22.20 · Windows 11_
 
 | Suite | Tool | Files | Tests | Result |
 |---|---|---|---|---|
-| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 7 | 97 | ✅ all passing |
-| Frontend (components + routing) | Vitest + React Testing Library (jsdom) | 2 | 13 | ✅ all passing |
+| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 7 | 98 | ✅ all passing |
+| Frontend (components, routing, redirects) | Vitest + React Testing Library (jsdom) | 3 | 45 | ✅ all passing |
 | Server TypeScript (`tsc --noEmit`) / ESLint / build | — | — | — | ✅ |
 | Client TypeScript (`tsc -b`) / ESLint / `vite build` | — | — | — | ✅ |
 
@@ -87,6 +87,10 @@ Fixture: operator A (12-seat bus, fare 1000) with 3 bookings / 5 seats, one 2-se
 ### Seed and utilities (`tests/seed.test.ts`, `tests/unit.test.ts`)
 
 Seed creates the full demo dataset, a second run creates **zero** new records, no seat is double-allocated, no PENDING bookings remain, and all three demo logins work · seat-layout generation (2+2 numbering/positions/premiums; two-deck sleeper) · fare rounding · PNR alphabet and uniqueness (500 draws) · IST day boundaries · Mongo-operator stripping · 404 envelope, malformed JSON 400, security headers, CORS allow/deny, OpenAPI served.
+
+### Open-redirect regressions (`client/src/test/redirects.test.tsx`, 32 tests)
+
+`safeInternalPath` keeps internal paths (with query and hash) and rejects protocol-relative, backslash, mixed-slash, tab/newline-split, percent-encoded, absolute `http(s)`, `javascript:`/`data:` and relative targets · documents that React Router 7.18 renders backslash hrefs verbatim (so the guard is required) and that guarded links stay internal · a signed-in passenger with a legitimate `from` lands on it, while `//evil.com`, `/\evil.com`, `\\evil.com` and `https://evil.com` all land on `/account`.
 
 ### Frontend (`client/src/test`, 13 tests)
 

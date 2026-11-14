@@ -14,8 +14,8 @@ The core engineering guarantee: **two people can never be sold the same seat on 
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui-style components (Radix primitives), React Router, TanStack Query, React Hook Form, Zod, Recharts, Lucide |
-| Backend | Node.js, Express 5, TypeScript, Mongoose 8, JWT (access) + rotating opaque refresh tokens, bcrypt (bcryptjs), Zod, Helmet, CORS, express-rate-limit |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui-style components (Radix primitives), React Router 7, TanStack Query, React Hook Form, Zod, Recharts, Lucide |
+| Backend | Node.js, Express 5, TypeScript, Mongoose 8, Zod 4, JWT (access) + rotating opaque refresh tokens, bcrypt (bcryptjs), Helmet, CORS, express-rate-limit |
 | Database | MongoDB Atlas (replica set → multi-document transactions); partial unique indexes, TTL index |
 | Testing | Vitest, Supertest, mongodb-memory-server (in-memory replica set), React Testing Library |
 | Docs / deploy | OpenAPI 3 + Swagger UI, Vercel (client), Render (API), MongoDB Atlas |
@@ -125,6 +125,7 @@ Seed data: 4 operators, 9 buses across 5 seat layouts (2+2 seater, 2+1 seater, 2
 | server | `npm run typecheck` / `npm run lint` | TypeScript / ESLint |
 | server | `npm test` | API test suite (in-memory replica set) |
 | server | `npm run db:init` | Create collections and all indexes, print them |
+| server | `npm run db:verify` | Read-only Atlas check: connection, ping, queries, every index, data integrity |
 | server | `npm run seed` | Upsert demo data |
 | client | `npm run dev` | Vite dev server |
 | client | `npm run build` | Typecheck + production build |
@@ -150,7 +151,7 @@ Server tests start an in-memory MongoDB **replica set**, so transactions behave 
 
 **Frontend — Vercel.** Import the repository, set *Root Directory* to `client`, framework Vite. Add `VITE_API_URL=https://<your-render-service>.onrender.com/api/v1`. `client/vercel.json` provides the SPA rewrite and security headers.
 
-After deploying, open `https://<api>/health` (expect `"status":"ok","transactions":true`) and sign in on the Vercel URL. Note the Render free plan sleeps after inactivity; the first request can take ~30–60 s.
+After deploying, open `https://<api>/health` (expect `"status":"ok","database":"reachable","transactions":true` — the check pings the database) and sign in on the Vercel URL. Note the Render free plan sleeps after inactivity; the first request can take ~30–60 s.
 
 ## Security summary
 
