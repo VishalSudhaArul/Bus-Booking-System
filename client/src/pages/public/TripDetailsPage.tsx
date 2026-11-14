@@ -12,6 +12,7 @@ import { loadDraft, saveDraft } from '@/features/bookings/draft';
 import { FareBreakdown, estimateFare } from '@/features/bookings/FareSummary';
 import { SeatLegend, SeatMap } from '@/features/seats/SeatMap';
 import { JourneyLine, StopList } from '@/features/trips/TripCard';
+import { redirectFromState } from '@/lib/navigation';
 import { busTypeLabel, formatDay, formatTime } from '@/lib/utils';
 import { tripApi } from '@/services';
 import type { TripSeat } from '@/types';
@@ -97,7 +98,7 @@ export function TripDetailsPage() {
   const t = trip.data;
   const bookable = seatMap.data.bookable;
   const freeCount = seatMap.data.seats.filter((s) => s.status === 'AVAILABLE').length;
-  const backTo = (location.state as { from?: string } | null)?.from;
+  const backTo = redirectFromState(location.state, '');
 
   return (
     <div className="container-page py-6">

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { PageLoader } from '@/components/common/feedback';
+import { redirectFromState } from '@/lib/navigation';
 import { refreshAccessToken, setAccessToken, setSessionExpiredHandler } from '@/lib/api';
 import { authApi } from '@/services';
 import type { Role, User } from '@/types';
@@ -108,8 +109,8 @@ export function GuestOnly() {
   const location = useLocation();
   if (status === 'loading') return <PageLoader />;
   if (user) {
-    const from = (location.state as { from?: string } | null)?.from;
-    return <Navigate to={from && user.role === 'PASSENGER' ? from : homeFor(user.role)} replace />;
+    const home = homeFor(user.role);
+    return <Navigate to={user.role === 'PASSENGER' ? redirectFromState(location.state, home) : home} replace />;
   }
   return <Outlet />;
 }

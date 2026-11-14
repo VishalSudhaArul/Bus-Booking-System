@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/form';
 import { homeFor, useAuth } from '@/features/auth/AuthContext';
 import { ApiError, errorMessage } from '@/lib/api';
+import { redirectFromState } from '@/lib/navigation';
 
 const loginSchema = z.object({
   email: z.string().trim().email('Enter a valid email address'),
@@ -92,7 +93,6 @@ export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from;
   const [formError, setFormError] = useState('');
   const { register, handleSubmit, setValue, formState } = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
 
@@ -102,7 +102,7 @@ export function LoginPage() {
       const user = await login(values.email, values.password);
       toast.success(`Welcome back, ${user.name.split(' ')[0]}`);
       // Only passengers return to a booking flow; staff go to their console.
-      navigate(user.role === 'PASSENGER' && from ? from : homeFor(user.role), { replace: true });
+      navigate(user.role === 'PASSENGER' ? redirectFromState(location.state, homeFor(user.role)) : homeFor(user.role), { replace: true });
     } catch (err) {
       setFormError(err instanceof ApiError && err.status === 429 ? 'Too many attempts. Please wait a few minutes and try again.' : errorMessage(err));
     }
@@ -165,7 +165,6 @@ export function RegisterPage() {
   const { register: signUp } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from;
   const [formError, setFormError] = useState('');
   const { register, handleSubmit, setError, formState } = useForm<z.infer<typeof registerSchema>>({ resolver: zodResolver(registerSchema), defaultValues: { phone: '' } });
   const e = formState.errors;
@@ -175,7 +174,7 @@ export function RegisterPage() {
     try {
       const user = await signUp({ name: values.name, email: values.email, phone: values.phone || undefined, password: values.password });
       toast.success(`Welcome to BusNest, ${user.name.split(' ')[0]}`);
-      navigate(from ?? '/account', { replace: true });
+      navigate(redirectFromState(location.state, '/account'), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === 'EMAIL_EXISTS') return setError('email', { message: 'An account with this email already exists' });
       if (err instanceof ApiError && err.code === 'VALIDATION_ERROR') {
