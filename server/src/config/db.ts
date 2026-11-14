@@ -110,3 +110,25 @@ export async function disconnectDatabase(): Promise<void> {
 export function isDatabaseReady(): boolean {
   return mongoose.connection.readyState === 1;
 }
+
+/**
+ * Round-trips a `ping` to the server. Unlike readyState, this proves the
+ * database is answering right now. Never throws; returns no connection details.
+ */
+export async function pingDatabase(timeoutMs = 2000): Promise<{ ok: boolean; latencyMs: number | null }> {
+  const db = mongoose.connection.db;
+  if (mongoose.connection.readyState !== 1 || !db) return { ok: false, latencyMs: null };
+  const started = Date.now();
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('ping timeout')), timeoutMs);
+    });
+    const reply = await Promise.race([db.admin().command({ ping: 1 }), timeout]);
+    return { ok: reply?.ok === 1, latencyMs: Date.now() - started };
+  } catch {
+    return { ok: false, latencyMs: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}

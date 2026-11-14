@@ -73,6 +73,16 @@ describe('API error handling', () => {
     expect(res.body.data.transactions).toBe(true);
   });
 
+  it('health check pings the database and reveals no connection details', async () => {
+    const res = await api().get('/health');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ status: 'ok', database: 'reachable' });
+    expect(res.body.data.databaseLatencyMs).toEqual(expect.any(Number));
+    expect(res.headers['cache-control']).toBe('no-store');
+    const text = JSON.stringify(res.body);
+    expect(text).not.toMatch(/mongodb|127\.0\.0\.1|localhost|test_[a-f0-9]{8}/i);
+  });
+
   it('only allows the configured origin through CORS', async () => {
     const allowed = await api().get('/health').set('Origin', 'http://localhost:5173');
     expect(allowed.headers['access-control-allow-origin']).toBe('http://localhost:5173');

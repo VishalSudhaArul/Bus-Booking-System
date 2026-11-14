@@ -3,7 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import { isDatabaseReady, supportsTransactions } from './config/db';
+import { pingDatabase, supportsTransactions } from './config/db';
 import { env } from './config/env';
 import { openApiDocument } from './config/openapi';
 import { errorHandler, notFoundHandler } from './middleware/error';
@@ -47,11 +47,20 @@ export function createApp() {
   app.use(mongoSanitize);
   app.use(requestLogger);
 
-  app.get('/health', (_req, res) => {
-    const ready = isDatabaseReady();
-    res.status(ready ? 200 : 503).json({
-      success: ready,
-      data: { status: ready ? 'ok' : 'database-unavailable', transactions: supportsTransactions(), uptime: Math.round(process.uptime()) },
+  // Liveness + real database check (a ping round-trip, not just the connection flag).
+  // Deliberately reports no host, database name or driver error text.
+  app.get('/health', async (_req, res) => {
+    const db = await pingDatabase();
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(db.ok ? 200 : 503).json({
+      success: db.ok,
+      data: {
+        status: db.ok ? 'ok' : 'database-unavailable',
+        database: db.ok ? 'reachable' : 'unreachable',
+        databaseLatencyMs: db.latencyMs,
+        transactions: supportsTransactions(),
+        uptime: Math.round(process.uptime()),
+      },
     });
   });
 
