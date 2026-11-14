@@ -25,7 +25,7 @@ const passengerSchema = z.object({
     .min(2, 'Enter the full name')
     .max(80)
     .regex(/^[\p{L}][\p{L} .'-]*$/u, 'Use letters only'),
-  age: z.coerce.number({ invalid_type_error: 'Enter the age' }).int('Enter a whole number').min(1, 'Enter a valid age').max(120, 'Enter a valid age'),
+  age: z.coerce.number({ error: (issue) => (issue.input === undefined ? undefined : 'Enter the age') }).int('Enter a whole number').min(1, 'Enter a valid age').max(120, 'Enter a valid age'),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { message: 'Select a gender' }),
 });
 
@@ -53,7 +53,7 @@ export function CheckoutPage() {
   const seats = useMemo(() => (seatMap.data?.seats ?? []).filter((s) => draft?.seatIds.includes(s._id)), [seatMap.data, draft]);
   const fare = useMemo(() => estimateFare(seatMap.data?.baseFare ?? 0, seats.map((s) => s.fare)), [seatMap.data, seats]);
 
-  const form = useForm<CheckoutValues>({
+  const form = useForm<z.input<typeof checkoutSchema>, unknown, CheckoutValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       passengers: (draft?.seatIds ?? []).map((seatId, i) => ({ seatId, name: i === 0 ? (user?.name ?? '') : '', age: '' as unknown as number, gender: '' as unknown as 'MALE' })),

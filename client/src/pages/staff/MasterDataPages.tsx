@@ -37,7 +37,7 @@ const operatorSchema = z.object({
 type OperatorValues = z.infer<typeof operatorSchema>;
 
 function OperatorDialog({ operator, open, onOpenChange }: { operator: Operator | null; open: boolean; onOpenChange: (o: boolean) => void }) {
-  const form = useForm<OperatorValues>({ resolver: zodResolver(operatorSchema) });
+  const form = useForm<z.input<typeof operatorSchema>, unknown, OperatorValues>({ resolver: zodResolver(operatorSchema) });
   useEffect(() => {
     if (open) form.reset({ name: operator?.name ?? '', code: operator?.code ?? '', contactEmail: operator?.contactEmail ?? '', contactPhone: operator?.contactPhone ?? '', description: operator?.description ?? '', rating: operator?.rating ?? 4, isActive: operator?.isActive ?? true });
   }, [open, operator, form]);

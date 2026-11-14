@@ -42,7 +42,7 @@ type BusValues = z.infer<typeof busSchema>;
 function BusDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const operators = useOperatorOptions(open);
   const navigate = useNavigate();
-  const form = useForm<BusValues>({ resolver: zodResolver(busSchema), defaultValues: { operatorId: '', name: '', registrationNumber: '', isAC: true, amenities: 'Charging point, Water bottle', template: 'SEATER_2X2', rows: 10, windowPremium: 0, lowerDeckPremium: 0 } });
+  const form = useForm<z.input<typeof busSchema>, unknown, BusValues>({ resolver: zodResolver(busSchema), defaultValues: { operatorId: '', name: '', registrationNumber: '', isAC: true, amenities: 'Charging point, Water bottle', template: 'SEATER_2X2', rows: 10, windowPremium: 0, lowerDeckPremium: 0 } });
   useEffect(() => {
     if (open) form.reset();
   }, [open, form]);

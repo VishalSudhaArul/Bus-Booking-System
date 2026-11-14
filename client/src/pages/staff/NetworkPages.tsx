@@ -35,7 +35,7 @@ type RouteValues = z.infer<typeof routeSchema>;
 function RouteDialog({ route, open, onOpenChange }: { route: BusRoute | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const operators = useOperatorOptions(open);
   const stops = useQuery({ queryKey: ['stops', 'options'], queryFn: () => adminApi.stops({ limit: 200 }), enabled: open, select: (d) => d.items.filter((s) => s.isActive) });
-  const form = useForm<RouteValues>({ resolver: zodResolver(routeSchema) });
+  const form = useForm<z.input<typeof routeSchema>, unknown, RouteValues>({ resolver: zodResolver(routeSchema) });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'stops' });
   useEffect(() => {
     if (!open) return;
@@ -174,7 +174,7 @@ type TripValues = z.infer<typeof tripSchema>;
 function ScheduleTripDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const routes = useQuery({ queryKey: ['routes', 'options'], queryFn: () => adminApi.routes({ limit: 100, isActive: 'true' }), enabled: open, select: (d) => d.items });
   const buses = useQuery({ queryKey: ['buses', 'options'], queryFn: () => adminApi.buses({ limit: 100, isActive: 'true' }), enabled: open, select: (d) => d.items });
-  const form = useForm<TripValues>({ resolver: zodResolver(tripSchema), defaultValues: { routeId: '', busId: '', departure: `${istDate(1)}T21:00`, baseFare: 800, repeatDays: 1 } });
+  const form = useForm<z.input<typeof tripSchema>, unknown, TripValues>({ resolver: zodResolver(tripSchema), defaultValues: { routeId: '', busId: '', departure: `${istDate(1)}T21:00`, baseFare: 800, repeatDays: 1 } });
   useEffect(() => {
     if (open) form.reset();
   }, [open, form]);

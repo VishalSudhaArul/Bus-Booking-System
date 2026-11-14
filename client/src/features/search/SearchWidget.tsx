@@ -38,7 +38,7 @@ export function SearchWidget({ defaults, variant = 'hero', onSearch }: Props) {
   const id = useId();
   const { data: cities = [] } = useQuery({ queryKey: ['cities'], queryFn: catalogApi.cities, staleTime: 10 * 60_000 });
 
-  const { register, handleSubmit, setValue, getValues, formState } = useForm<SearchValues>({
+  const { register, handleSubmit, setValue, getValues, formState } = useForm<z.input<typeof searchSchema>, unknown, SearchValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { from: defaults?.from ?? '', to: defaults?.to ?? '', date: defaults?.date ?? istDate(1), passengers: defaults?.passengers ?? 1 },
   });
