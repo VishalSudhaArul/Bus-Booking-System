@@ -13,9 +13,16 @@ export const passengerSchema = z.object({
 });
 
 // Deliberately no fare, status, PNR or price fields: the server computes all of them.
+const promoCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[A-Z0-9]{3,20}$/, 'Enter a valid promo code');
+
 export const createBookingSchema = z
   .object({
     tripId: objectId,
+    promoCode: promoCodeSchema.optional(),
     boardingStopId: objectId,
     droppingStopId: objectId,
     contact: z.object({ email: emailSchema, phone: phoneSchema }),
@@ -30,6 +37,16 @@ export const createBookingSchema = z
       ctx.addIssue({ code: 'custom', path: ['passengers'], message: 'Each passenger must have a different seat' });
     }
   });
+
+export const quoteSchema = z.object({
+  tripId: objectId,
+  seatIds: z
+    .array(objectId)
+    .min(1, 'Select at least one seat')
+    .max(env.BOOKING_MAX_SEATS)
+    .refine((ids) => new Set(ids).size === ids.length, 'Seats must be different'),
+  promoCode: promoCodeSchema.optional(),
+});
 
 export const idempotencyKeySchema = z
   .string({ error: (issue) => (issue.input === undefined ? 'Idempotency-Key header is required' : undefined) })
@@ -55,3 +72,4 @@ export const cancelBookingSchema = z.object({
 export const pnrParams = z.object({ pnr: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{6,14}$/, 'Invalid PNR') });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
+export type QuoteInput = z.infer<typeof quoteSchema>;

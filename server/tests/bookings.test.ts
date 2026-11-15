@@ -34,7 +34,7 @@ describe('booking a seat', () => {
     expect(b.status).toBe('CONFIRMED');
     expect(b.passengers.map((p: { seatNumber: string }) => p.seatNumber)).toEqual(['1A', '1B']);
     // 2 x 500 base + 50 window premium = 1050, 5% GST = 52.5
-    expect(b.fare).toEqual({ baseFare: 1000, seatCharges: 50, taxPercent: 5, taxes: 52.5, total: 1102.5 });
+    expect(b.fare).toEqual({ baseFare: 1000, seatCharges: 50, discount: 0, taxPercent: 5, taxes: 52.5, total: 1102.5 });
     expect(b.payment.status).toBe('PAID');
     expect(b.route.sourceCity).toBeTruthy();
     expect(b.boardingPoint.time).toBeTruthy();

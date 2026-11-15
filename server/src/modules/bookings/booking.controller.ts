@@ -13,6 +13,10 @@ export async function create(req: Request, res: Response) {
   res.status(replayed ? 200 : 201).json({ success: true, data: booking });
 }
 
+export async function quote(req: Request, res: Response) {
+  sendOk(res, await service.quoteFare(req.body));
+}
+
 export async function mine(req: Request, res: Response) {
   const { items, meta } = await service.listMyBookings(actorOf(req), query(req));
   sendOk(res, items, meta);

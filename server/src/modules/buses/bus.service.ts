@@ -42,8 +42,8 @@ export const updateBusSchema = z.object({
 });
 
 export const updateSeatSchema = z
-  .object({ isActive: z.boolean().optional(), priceModifier: z.number().min(0).max(2000).optional() })
-  .refine((v) => v.isActive !== undefined || v.priceModifier !== undefined, 'Provide a field to update');
+  .object({ isActive: z.boolean().optional(), priceModifier: z.number().min(0).max(2000).optional(), ladiesOnly: z.boolean().optional() })
+  .refine((v) => v.isActive !== undefined || v.priceModifier !== undefined || v.ladiesOnly !== undefined, 'Provide a field to update');
 
 export const seatParams = z.object({ id: objectId, seatId: objectId });
 
@@ -134,6 +134,7 @@ export async function updateSeat(actor: Actor, busId: string, seatId: string, in
   }
   if (input.isActive !== undefined) seat.isActive = input.isActive;
   if (input.priceModifier !== undefined) seat.priceModifier = input.priceModifier;
+  if (input.ladiesOnly !== undefined) seat.ladiesOnly = input.ladiesOnly;
   await seat.save();
   await recordAudit(actor, { action: 'SEAT_UPDATED', entityType: 'Seat', entityId: seatId, metadata: { busId, ...input } });
   return seat.toObject();

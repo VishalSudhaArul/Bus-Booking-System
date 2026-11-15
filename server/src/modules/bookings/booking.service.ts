@@ -10,28 +10,61 @@ import { logger } from '../../utils/logger';
 import { pnrGenerator } from '../../utils/pnr';
 import { round2 } from '../../utils/time';
 import { recordAudit } from '../audit/audit.service';
+import { applyPromo } from '../promos/promo.service';
 import { Cancellation } from '../cancellations/cancellation.model';
 import { Seat } from '../seats/seat.model';
 import { Trip, TripStop } from '../trips/trip.model';
 import { Booking, BookingPassenger, SeatAllocation } from './booking.model';
-import type { CreateBookingInput, listBookingsQuery, myBookingsQuery } from './booking.validation';
+import type { CreateBookingInput, listBookingsQuery, myBookingsQuery, QuoteInput } from './booking.validation';
 
 const MAX_PNR_ATTEMPTS = 5;
 
 interface FareBreakdown {
   baseFare: number;
   seatCharges: number;
+  /** Promo discount, taken off before tax. 0 when no code is used. */
+  discount: number;
+  promoCode?: string;
   taxPercent: number;
   taxes: number;
   total: number;
 }
 
-/** The only place a fare is ever computed. Client-supplied prices are never read. */
-export function calculateFare(baseFare: number, modifiers: number[], taxPercent = env.GST_PERCENT): FareBreakdown {
+/**
+ * The only place a fare is ever computed. Client-supplied prices are never
+ * read; a promo code is the only input the client controls, and it is
+ * validated here.
+ */
+export function calculateFare(baseFare: number, modifiers: number[], taxPercent = env.GST_PERCENT, promoCode?: string): FareBreakdown {
   const base = round2(baseFare * modifiers.length);
   const seatCharges = round2(modifiers.reduce((sum, m) => sum + m, 0));
-  const taxes = round2(((base + seatCharges) * taxPercent) / 100);
-  return { baseFare: base, seatCharges, taxPercent, taxes, total: round2(base + seatCharges + taxes) };
+  const subtotal = round2(base + seatCharges);
+  const promo = promoCode ? applyPromo(promoCode, subtotal) : null;
+  const discount = promo?.discount ?? 0;
+  const taxable = round2(subtotal - discount);
+  const taxes = round2((taxable * taxPercent) / 100);
+  return {
+    baseFare: base,
+    seatCharges,
+    discount,
+    ...(promo ? { promoCode: promo.code } : {}),
+    taxPercent,
+    taxes,
+    total: round2(taxable + taxes),
+  };
+}
+
+/** Women-only seats may only be assigned to female passengers. */
+function assertLadiesSeats(seats: { _id: unknown; seatNumber: string; ladiesOnly?: boolean | null }[], passengers: { seatId: string; gender: string }[]) {
+  const genderBySeat = new Map(passengers.map((p) => [p.seatId, p.gender]));
+  const violations = seats.filter((s) => s.ladiesOnly && genderBySeat.get(String(s._id)) !== 'FEMALE');
+  if (violations.length) {
+    throw unprocessable(
+      `Seat ${violations.map((s) => s.seatNumber).join(', ')} is reserved for women. Choose another seat or assign it to a female passenger.`,
+      'LADIES_ONLY_SEAT',
+      { seats: violations.map((s) => ({ seatId: String(s._id), seatNumber: s.seatNumber })) },
+    );
+  }
 }
 
 /** Stable fingerprint of a booking request, used to detect a reused idempotency key. */
@@ -42,6 +75,7 @@ function hashRequest(input: CreateBookingInput): string {
     droppingStopId: input.droppingStopId,
     contact: input.contact,
     passengers: [...input.passengers].sort((a, b) => a.seatId.localeCompare(b.seatId)),
+    promoCode: input.promoCode ?? null,
   };
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
 }
@@ -77,6 +111,26 @@ async function replay(actor: Actor, existing: { _id: unknown; status: string; re
   return { booking: await getBookingDetails(actor, String(existing._id)), replayed: true };
 }
 
+/**
+ * Authoritative price for a prospective booking — same validation and the same
+ * calculateFare() the booking itself uses, so checkout shows exactly what will
+ * be charged (including any promo). Writes nothing.
+ */
+export async function quoteFare(input: QuoteInput) {
+  const trip = await Trip.findById(input.tripId).lean();
+  if (!trip) throw notFound('Trip');
+  if (trip.status !== 'SCHEDULED' || trip.departureTime <= new Date()) throw conflict('This trip is no longer open for booking', 'TRIP_NOT_BOOKABLE');
+  const seats = await Seat.find({ _id: { $in: input.seatIds }, busId: trip.busId, isActive: true }).lean();
+  if (seats.length !== input.seatIds.length) throw badRequest('One or more selected seats do not belong to this bus', 'INVALID_SEATS');
+  const fare = calculateFare(trip.baseFare, seats.map((s) => s.priceModifier), env.GST_PERCENT, input.promoCode);
+  return {
+    fare,
+    seats: seats
+      .map((s) => ({ seatId: String(s._id), seatNumber: s.seatNumber, fare: trip.baseFare + s.priceModifier, ladiesOnly: !!s.ladiesOnly }))
+      .sort((a, b) => a.seatNumber.localeCompare(b.seatNumber, undefined, { numeric: true })),
+  };
+}
+
 export interface CreateBookingOptions {
   /** Seed script only: allows historical demo bookings on past trips. */
   allowPast?: boolean;
@@ -110,6 +164,7 @@ export async function createBooking(actor: Actor, input: CreateBookingInput, ide
   if (outOfService.length) {
     throw conflict(`Seat ${outOfService.map((s) => s.seatNumber).join(', ')} is not available for booking`, 'SEAT_UNAVAILABLE');
   }
+  assertLadiesSeats(seats, input.passengers);
 
   // 3. Boarding and dropping points must be real stops of this trip, in order.
   const stops = await TripStop.find({ tripId: trip._id, stopId: { $in: [input.boardingStopId, input.droppingStopId] } }).lean();
@@ -121,7 +176,7 @@ export async function createBooking(actor: Actor, input: CreateBookingInput, ide
 
   // 4. Fare is recomputed from database values only.
   const seatById = new Map(seats.map((s) => [String(s._id), s]));
-  const fare = calculateFare(trip.baseFare, seats.map((s) => s.priceModifier));
+  const fare = calculateFare(trip.baseFare, seats.map((s) => s.priceModifier), env.GST_PERCENT, input.promoCode);
 
   const build = (pnr: string, status: 'PENDING' | 'CONFIRMED') => {
     const bookingId = new Types.ObjectId();

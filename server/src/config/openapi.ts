@@ -106,7 +106,7 @@ export const openApiDocument = {
       OperatorInput: { type: 'object', required: ['name', 'code', 'contactEmail', 'contactPhone'], properties: { name: str, code: { type: 'string', example: 'DSL' }, contactEmail: str, contactPhone: str, description: str, rating: num, isActive: bool } },
       Stop: { type: 'object', properties: { _id: id, name: str, city: str, address: str, landmark: str, isActive: bool } },
       StopInput: { type: 'object', required: ['name', 'city'], properties: { name: str, city: str, address: str, landmark: str, isActive: bool } },
-      Seat: { type: 'object', properties: { _id: id, seatNumber: { type: 'string', example: '3B' }, deck: { type: 'string', enum: ['LOWER', 'UPPER'] }, row: num, column: num, seatType: str, position: { type: 'string', enum: ['WINDOW', 'AISLE'] }, priceModifier: num, isActive: bool } },
+      Seat: { type: 'object', properties: { _id: id, seatNumber: { type: 'string', example: '3B' }, deck: { type: 'string', enum: ['LOWER', 'UPPER'] }, row: num, column: num, seatType: str, position: { type: 'string', enum: ['WINDOW', 'AISLE'] }, priceModifier: num, ladiesOnly: { type: 'boolean', description: 'Reserved for female passengers' }, isActive: bool } },
       Bus: { type: 'object', properties: { _id: id, operatorId: ref('Operator'), name: str, registrationNumber: str, busType: { type: 'string', enum: ['SEATER', 'SEMI_SLEEPER', 'SLEEPER'] }, isAC: bool, amenities: { type: 'array', items: str }, layout: { type: 'object' }, totalSeats: num, seats: { type: 'array', items: ref('Seat') } } },
       BusInput: {
         type: 'object',
@@ -140,6 +140,7 @@ export const openApiDocument = {
         description: 'No price, status or PNR fields are accepted — the server computes them.',
         properties: {
           tripId: id, boardingStopId: id, droppingStopId: id,
+          promoCode: { type: 'string', example: 'SAVE10', description: 'Optional; validated and applied server-side' },
           contact: { type: 'object', properties: { email: str, phone: { type: 'string', example: '9876543210' } } },
           passengers: { type: 'array', minItems: 1, maxItems: 6, items: { type: 'object', required: ['seatId', 'name', 'age', 'gender'], properties: { seatId: id, name: str, age: { type: 'integer', minimum: 1, maximum: 120 }, gender: { type: 'string', enum: ['MALE', 'FEMALE', 'OTHER'] } } } },
         },
@@ -148,7 +149,7 @@ export const openApiDocument = {
         type: 'object',
         properties: {
           _id: id, pnr: { type: 'string', example: 'BN7K2MQ9XA' }, status: { type: 'string', enum: ['CONFIRMED', 'CANCELLED'] }, seatCount: num,
-          fare: { type: 'object', properties: { baseFare: num, seatCharges: num, taxPercent: num, taxes: num, total: num } },
+          fare: { type: 'object', properties: { baseFare: num, seatCharges: num, discount: num, promoCode: str, taxPercent: num, taxes: num, total: num } },
           payment: { type: 'object', properties: { method: str, reference: str, status: { type: 'string', enum: ['PAID', 'REFUNDED', 'PARTIALLY_REFUNDED', 'NOT_REFUNDED'] } } },
           passengers: { type: 'array', items: { type: 'object', properties: { name: str, age: num, gender: str, seatNumber: str, fare: num } } },
           trip: { type: 'object' }, route: { type: 'object' }, operator: { type: 'object' }, boardingPoint: { type: 'object' }, droppingPoint: { type: 'object' },
@@ -170,7 +171,7 @@ export const openApiDocument = {
     },
     '/auth/me/password': { patch: op({ tag: 'Auth', summary: 'Change password (signs out other sessions)', roles: 'any signed-in user', body: { type: 'object', required: ['currentPassword', 'newPassword'], properties: { currentPassword: str, newPassword: str } }, responses: { 200: ok('Password changed'), 400: E[400] } }) },
 
-    '/trips/search': { get: op({ tag: 'Trips', summary: 'Search trips between two cities on a date', params: [q('from', str, 'Source city', true), q('to', str, 'Destination city', true), q('date', { type: 'string', example: '2026-12-01' }, 'Journey date (IST), YYYY-MM-DD', true), q('passengers', { type: 'integer', minimum: 1, maximum: 6, default: 1 }), q('sort', { type: 'string', enum: ['departure', 'arrival', 'price', 'seats', 'duration', 'rating'] }), q('order', { type: 'string', enum: ['asc', 'desc'] }), q('busType', str, 'Comma separated: SEATER,SEMI_SLEEPER,SLEEPER'), q('ac', { type: 'string', enum: ['true', 'false'] }), q('departureSlot', str, 'Comma separated: EARLY,MORNING,AFTERNOON,NIGHT'), q('maxPrice', num), ...paging], responses: { 200: ok('Matching trips (empty list when none)', { type: 'array', items: ref('TripSearchResult') }, true), 400: E[400] } }) },
+    '/trips/search': { get: op({ tag: 'Trips', summary: 'Search trips between two cities on a date', params: [q('from', str, 'Source city', true), q('to', str, 'Destination city', true), q('date', { type: 'string', example: '2026-12-01' }, 'Journey date (IST), YYYY-MM-DD', true), q('passengers', { type: 'integer', minimum: 1, maximum: 6, default: 1 }), q('sort', { type: 'string', enum: ['departure', 'arrival', 'price', 'seats', 'duration', 'rating'] }), q('order', { type: 'string', enum: ['asc', 'desc'] }), q('busType', str, 'Comma separated: SEATER,SEMI_SLEEPER,SLEEPER'), q('ac', { type: 'string', enum: ['true', 'false'] }), q('departureSlot', str, 'Comma separated: MORNING (05-12), AFTERNOON (12-17), EVENING (17-21), NIGHT (21-05), IST'), q('maxPrice', num), q('minRating', num, 'Minimum operator rating 0-5'), ...paging], responses: { 200: ok('Matching trips (empty list when none)', { type: 'array', items: ref('TripSearchResult') }, true), 400: E[400] } }) },
     '/trips': {
       get: op({ tag: 'Trips', summary: 'List trips for management, with occupancy', roles: 'ADMIN, OPERATOR (own trips)', params: [...paging, q('status', { type: 'string', enum: ['SCHEDULED', 'DEPARTED', 'COMPLETED', 'CANCELLED'] }), q('routeId', str), q('busId', str), q('from', str, 'YYYY-MM-DD'), q('to', str, 'YYYY-MM-DD')], responses: { 200: ok('Trips', { type: 'array', items: { type: 'object' } }, true) } }),
       post: op({ tag: 'Trips', summary: 'Schedule one trip or a daily series', roles: 'ADMIN, OPERATOR (own route and bus)', body: ref('TripInput'), responses: { 201: ok('Trips created', { type: 'object', properties: { created: num, tripIds: { type: 'array', items: str } } }), 400: E[400], 409: err('Bus already scheduled at that time', 'BUS_SCHEDULE_CONFLICT', 'This bus is already scheduled on an overlapping trip') } }),
@@ -199,6 +200,8 @@ export const openApiDocument = {
       }),
       get: op({ tag: 'Bookings', summary: 'All bookings', roles: 'ADMIN, OPERATOR (own trips)', params: [...paging, q('status', { type: 'string', enum: ['CONFIRMED', 'CANCELLED'] }), q('search', str, 'PNR, contact email or phone'), q('tripId', str)], responses: { 200: ok('Bookings', { type: 'array', items: { type: 'object' } }, true) } }),
     },
+    '/bookings/quote': { post: op({ tag: 'Bookings', summary: 'Authoritative fare for selected seats (optionally with a promo code); writes nothing', roles: 'PASSENGER', body: { type: 'object', required: ['tripId', 'seatIds'], properties: { tripId: id, seatIds: { type: 'array', items: id }, promoCode: str } }, responses: { 200: ok('Fare quote'), 400: err('Invalid promo code or seats', 'INVALID_PROMO', 'This promo code is not valid'), 409: E[409] } }) },
+    '/promos': { get: op({ tag: 'Bookings', summary: 'Available promo codes', responses: { 200: ok('Promo codes', { type: 'array', items: { type: 'object' } }) } }) },
     '/bookings/me': { get: op({ tag: 'Bookings', summary: 'Own bookings', roles: 'PASSENGER', params: [...paging, q('status', { type: 'string', enum: ['CONFIRMED', 'CANCELLED'] }), q('when', { type: 'string', enum: ['upcoming', 'past'] })], responses: { 200: ok('Bookings', { type: 'array', items: { type: 'object' } }, true) } }) },
     '/bookings/{id}': { get: op({ tag: 'Bookings', summary: 'Booking / ticket details', roles: 'owner PASSENGER, ADMIN, OPERATOR (own trips)', params: [idParam], responses: { 200: ok('Booking', ref('Booking')), 404: E[404] } }) },
     '/bookings/pnr/{pnr}': { get: op({ tag: 'Bookings', summary: 'Look up a booking by PNR', roles: 'owner PASSENGER, ADMIN, OPERATOR (own trips)', params: [{ name: 'pnr', in: 'path', required: true, schema: str }], responses: { 200: ok('Booking', ref('Booking')), 404: E[404] } }) },
@@ -212,7 +215,7 @@ export const openApiDocument = {
     '/operators/{id}': { patch: operators.update },
     '/buses': { get: buses.list, post: buses.create },
     '/buses/{id}': { get: op({ tag: 'Buses', summary: 'Bus with its full seat layout', roles: 'ADMIN, OPERATOR (own buses)', params: [idParam], responses: { 200: ok('Bus', ref('Bus')), 404: E[404] } }), patch: buses.update },
-    '/buses/{id}/seats/{seatId}': { patch: op({ tag: 'Buses', summary: 'Enable/disable a seat or change its fare modifier', roles: 'ADMIN', params: [idParam, { name: 'seatId', in: 'path', required: true, schema: str }], body: { type: 'object', properties: { isActive: bool, priceModifier: num } }, responses: { 200: ok('Seat', ref('Seat')), 409: err('Seat is booked on an upcoming trip', 'SEAT_IN_USE', 'This seat is booked on an upcoming trip and cannot be disabled') } }) },
+    '/buses/{id}/seats/{seatId}': { patch: op({ tag: 'Buses', summary: 'Enable/disable a seat, change its fare modifier or reserve it for women', roles: 'ADMIN', params: [idParam, { name: 'seatId', in: 'path', required: true, schema: str }], body: { type: 'object', properties: { isActive: bool, priceModifier: num, ladiesOnly: bool } }, responses: { 200: ok('Seat', ref('Seat')), 409: err('Seat is booked on an upcoming trip', 'SEAT_IN_USE', 'This seat is booked on an upcoming trip and cannot be disabled') } }) },
     '/routes/popular': { get: op({ tag: 'Routes', summary: 'Popular city pairs with lowest upcoming fare', responses: { 200: ok('Popular routes', { type: 'array', items: { type: 'object' } }) } }) },
     '/routes': { get: routes.list, post: routes.create },
     '/routes/{id}': { get: op({ tag: 'Routes', summary: 'Route details', roles: 'ADMIN, OPERATOR (own routes)', params: [idParam], responses: { 200: ok('Route', ref('Route')), 404: E[404] } }), patch: routes.update },

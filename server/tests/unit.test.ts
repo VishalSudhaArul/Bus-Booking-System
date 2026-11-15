@@ -27,8 +27,19 @@ describe('seat layout generation', () => {
 
 describe('fare calculation', () => {
   it('adds seat charges and tax, rounded to paise', () => {
-    expect(calculateFare(499.5, [0, 25, 75], 5)).toEqual({ baseFare: 1498.5, seatCharges: 100, taxPercent: 5, taxes: 79.93, total: 1678.43 });
-    expect(calculateFare(300, [0], 0)).toEqual({ baseFare: 300, seatCharges: 0, taxPercent: 0, taxes: 0, total: 300 });
+    expect(calculateFare(499.5, [0, 25, 75], 5)).toEqual({ baseFare: 1498.5, seatCharges: 100, discount: 0, taxPercent: 5, taxes: 79.93, total: 1678.43 });
+    expect(calculateFare(300, [0], 0)).toEqual({ baseFare: 300, seatCharges: 0, discount: 0, taxPercent: 0, taxes: 0, total: 300 });
+  });
+
+  it('applies promo codes before tax, with caps and minimums enforced', () => {
+    // SAVE10: 10% of 1000 = 100 off; GST on 900.
+    expect(calculateFare(500, [0, 0], 5, 'save10')).toEqual({ baseFare: 1000, seatCharges: 0, discount: 100, promoCode: 'SAVE10', taxPercent: 5, taxes: 45, total: 945 });
+    // SAVE10 is capped at 150.
+    expect(calculateFare(1000, [0, 0, 0], 5, 'SAVE10').discount).toBe(150);
+    // FLAT50 needs a 500 subtotal.
+    expect(calculateFare(500, [0], 5, 'FLAT50')).toMatchObject({ discount: 50, total: 472.5 });
+    expect(() => calculateFare(400, [0], 5, 'FLAT50')).toThrow(/at least ₹500/);
+    expect(() => calculateFare(500, [0], 5, 'NOPE')).toThrow(/not valid/);
   });
 });
 

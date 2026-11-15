@@ -21,8 +21,9 @@ export const searchTripsQuery = paginationQuery
     order: z.enum(['asc', 'desc']).default('asc'),
     busType: csv(BUS_TYPES),
     ac: z.enum(['true', 'false']).optional(),
-    departureSlot: csv(['EARLY', 'MORNING', 'AFTERNOON', 'NIGHT']),
+    departureSlot: csv(['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT']),
     maxPrice: z.coerce.number().positive().optional(),
+    minRating: z.coerce.number().min(0).max(5).optional(),
   })
   .refine((v) => v.from.toLowerCase() !== v.to.toLowerCase(), {
     message: 'Source and destination must be different',

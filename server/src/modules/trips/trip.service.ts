@@ -53,11 +53,12 @@ async function stopsByTrip(tripIds: unknown[]) {
   return map;
 }
 
-const slotOf = (d: Date) => {
+/** Morning 05–12, Afternoon 12–17, Evening 17–21, Night 21–05 (IST). */
+export const slotOf = (d: Date) => {
   const h = istHour(d);
-  if (h < 6) return 'EARLY';
-  if (h < 12) return 'MORNING';
-  if (h < 18) return 'AFTERNOON';
+  if (h >= 5 && h < 12) return 'MORNING';
+  if (h >= 12 && h < 17) return 'AFTERNOON';
+  if (h >= 17 && h < 21) return 'EVENING';
   return 'NIGHT';
 };
 
@@ -136,7 +137,8 @@ export async function searchTrips(q: SearchTripsQuery) {
       (q.busType.length === 0 || q.busType.includes(t.bus.busType as (typeof q.busType)[number])) &&
       (q.ac === undefined || t.bus.isAC === (q.ac === 'true')) &&
       (q.departureSlot.length === 0 || q.departureSlot.includes(slotOf(t.departureTime))) &&
-      (q.maxPrice === undefined || t.minFare <= q.maxPrice),
+      (q.maxPrice === undefined || t.minFare <= q.maxPrice) &&
+      (q.minRating === undefined || t.operator.rating >= q.minRating),
   );
 
   const keyOf: Record<SearchTripsQuery['sort'], (t: (typeof all)[number]) => number> = {
@@ -208,6 +210,7 @@ export async function getTripSeats(id: string) {
       column: s.column,
       seatType: s.seatType,
       position: s.position,
+      ladiesOnly: !!s.ladiesOnly,
       fare: trip.baseFare + s.priceModifier,
       status: !s.isActive ? 'UNAVAILABLE' : taken.has(String(s._id)) ? 'BOOKED' : 'AVAILABLE',
     })),

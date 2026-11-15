@@ -4,13 +4,14 @@ import { bookingLimiter } from '../../middleware/security';
 import { validate } from '../../middleware/validate';
 import { idParams } from '../../utils/http';
 import * as controller from './booking.controller';
-import { cancelBookingSchema, createBookingSchema, listBookingsQuery, myBookingsQuery, pnrParams } from './booking.validation';
+import { cancelBookingSchema, createBookingSchema, listBookingsQuery, myBookingsQuery, pnrParams, quoteSchema } from './booking.validation';
 
 export const bookingRouter = Router();
 
 bookingRouter.use(authenticate);
 
 bookingRouter.post('/', authorize('PASSENGER'), bookingLimiter, validate({ body: createBookingSchema }), controller.create);
+bookingRouter.post('/quote', authorize('PASSENGER'), bookingLimiter, validate({ body: quoteSchema }), controller.quote);
 bookingRouter.get('/me', authorize('PASSENGER'), validate({ query: myBookingsQuery }), controller.mine);
 bookingRouter.get('/', authorize('ADMIN', 'OPERATOR'), validate({ query: listBookingsQuery }), controller.list);
 bookingRouter.get('/pnr/:pnr', validate({ params: pnrParams }), controller.getByPnr);

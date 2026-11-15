@@ -21,6 +21,9 @@ const bookingSchema = new Schema(
         {
       baseFare: { type: Number, required: true, min: 0 },
       seatCharges: { type: Number, required: true, min: 0 },
+      // Promo discount taken off before tax (0 when none). Older bookings lack it and read as 0.
+      discount: { type: Number, default: 0, min: 0 },
+      promoCode: { type: String },
       taxPercent: { type: Number, required: true, min: 0 },
       taxes: { type: Number, required: true, min: 0 },
       total: { type: Number, required: true, min: 0 },

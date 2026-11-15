@@ -14,6 +14,7 @@ import { bookingRouter } from './modules/bookings/booking.routes';
 import { busRouter } from './modules/buses/bus.routes';
 import { cancellationRouter } from './modules/cancellations/cancellation.routes';
 import { operatorRouter } from './modules/operators/operator.routes';
+import { promoRouter } from './modules/promos/promo.routes';
 import { reportRouter } from './modules/reports/report.routes';
 import { routeRouter } from './modules/routes/route.routes';
 import { stopRouter } from './modules/stops/stop.routes';
@@ -78,6 +79,7 @@ export function createApp() {
   api.use('/trips', tripRouter);
   api.use('/bookings', bookingRouter);
   api.use('/cancellations', cancellationRouter);
+  api.use('/promos', promoRouter);
   api.use('/reports', reportRouter);
   api.use('/audit', auditRouter);
   app.use('/api/v1', api);

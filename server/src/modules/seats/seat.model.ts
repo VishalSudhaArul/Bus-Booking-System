@@ -12,6 +12,8 @@ const seatSchema = new Schema(
     position: { type: String, enum: SEAT_POSITIONS, required: true },
     // Added to the trip's base fare (e.g. sleeper berth or window premium).
     priceModifier: { type: Number, default: 0, min: 0 },
+    // Reserved for female passengers; enforced when a booking is created.
+    ladiesOnly: { type: Boolean, default: false },
     // false = physically unavailable (damaged, crew seat); never bookable.
     isActive: { type: Boolean, default: true },
   },

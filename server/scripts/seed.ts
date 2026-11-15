@@ -176,6 +176,11 @@ export async function seedDatabase(reset = false) {
   }
   // One seat is out of service on the day rider, to demonstrate "unavailable" seats.
   await Seat.updateOne({ busId: busIds.get('TN38NE3001'), seatNumber: '11D' }, { $set: { isActive: false } });
+  // A few seats near the front of every bus are reserved for women (idempotent).
+  for (const b of BUSES) {
+    const ladies = b.template.startsWith('SLEEPER') ? ['L1', 'L2'] : ['2A', '2B'];
+    await Seat.updateMany({ busId: busIds.get(b.reg), seatNumber: { $in: ladies } }, { $set: { ladiesOnly: true } });
+  }
 
   // ── Routes ───────────────────────────────────────────────────────────────
   const routeIds = new Map<string, string>();
