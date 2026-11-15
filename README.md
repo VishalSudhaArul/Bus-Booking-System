@@ -8,6 +8,17 @@ A full-stack, database-backed bus booking platform built for the ALGIONS AI LABS
 
 The core engineering guarantee: **two people can never be sold the same seat on the same trip**, enforced by a MongoDB partial unique index and proven by concurrent tests. See [docs/Technical-Report.md](docs/Technical-Report.md).
 
+## Live demo
+
+| | URL |
+|---|---|
+| Web app (Vercel) | https://bus-booking-system-liard.vercel.app |
+| API (Render) | https://busnest-api.onrender.com/api/v1 |
+| API docs (Swagger) | https://busnest-api.onrender.com/api/docs |
+| Health check | https://busnest-api.onrender.com/health |
+
+Sign in with the [demo accounts](#demo-accounts) (the login page has one-click buttons). The API runs on Render's free plan and sleeps after ~15 minutes of inactivity, so the first request after a pause can take up to a minute.
+
 ---
 
 ## Technology stack
@@ -152,6 +163,10 @@ Server tests start an in-memory MongoDB **replica set**, so transactions behave 
 **Frontend — Vercel.** Import the repository, set *Root Directory* to `client`, framework Vite. Add `VITE_API_URL=https://<your-render-service>.onrender.com/api/v1`. `client/vercel.json` provides the SPA rewrite and security headers.
 
 After deploying, open `https://<api>/health` (expect `"status":"ok","database":"reachable","transactions":true` — the check pings the database) and sign in on the Vercel URL. Note the Render free plan sleeps after inactivity; the first request can take ~30–60 s.
+
+**Order matters on a first deploy:** create the Render service first (with a temporary `CLIENT_URL`), deploy Vercel with `VITE_API_URL` pointing at Render, then set Render's `CLIENT_URL` to the Vercel URL and redeploy. Atlas *Network Access* must allow `0.0.0.0/0`, because Render's free plan has no fixed outbound IP.
+
+**Redeploying:** Vercel rebuilds automatically on every push to `main`. The Render service has `autoDeploy: false`, so after pushing API changes use *Manual Deploy → Deploy latest commit* in the Render dashboard.
 
 ## Security summary
 
