@@ -16,9 +16,9 @@ _Last updated: 2026-11-15_
 | 8 | Tests (Vitest/Supertest/RTL), security, responsive checks | ✅ Done |
 | 9 | README, API docs, technical & testing reports, Vercel/Render config | ✅ Done |
 | 10 | Final verification and deployment | ✅ Done — verified locally, on MongoDB Atlas and live on Render + Vercel |
-| 11 | UI redesign (branch `feature/ui-redesign`) | ✅ Built and verified locally — **not merged or deployed yet** |
+| 11 | UI redesign | ✅ Merged into `main` and live on Vercel + Render (2026-11-15) |
 
-## UI redesign (2026-11-15, branch `feature/ui-redesign`)
+## UI redesign (2026-11-15, merged into `main`, live)
 
 Travel-tech look: Royal Blue `#2563EB` primary, slate neutrals on `#F8FAFC`, white `rounded-xl` cards, Plus Jakarta Sans; the admin/operator consoles inherit the theme through the design tokens.
 
@@ -34,7 +34,9 @@ Backend added to make these real (not cosmetic): `Seat.ladiesOnly` enforced at b
 
 Verified: server 108/108 tests, client 53/53, typecheck/lint/build clean. Browser walkthrough on the in-memory demo API (Atlas untouched): search → each filter → seat drawer (ladies seat + regular seat) → guest **Continue to book** → login → back into the slide-over → SAVE10 (₹150 capped) → booked (₹1,522.50) → boarding pass with QR → ticket page; admin layout editor toggled a ladies-only seat; no horizontal overflow at 375 px.
 
-To ship: merge into `main` (Vercel redeploys the web app), *Manual Deploy* the API on Render, then run `npm run seed` against Atlas once to mark the ladies-only seats.
+Shipped: fast-forwarded `main` to the redesign (`ea2b855`); Vercel rebuilt automatically; Render *Manual Deploy* of `ea2b855`; `npm run seed` on Atlas marked the ladies-only seats. Live checks (8/8 against Render + Atlas): `/promos`; time-of-day and rating filters; ladies-only seats present; SAVE10 quote equals the charged total; male on a ladies-only seat → 422; female booking with promo → 201; test booking cancelled and seats released. The live web app serves the new hero, filters and seat drawer with no console errors.
+
+Seed fix found during the Atlas run: the seed's random booking plan depended on the run date, so re-running on a later day added a second set of demo bookings to trips that already had them (this run added 170 demo bookings and 7 cancellations — all through the real booking engine, so no seat is double-booked). The seed now skips any trip that already has seed bookings; a new test fakes a next-day run and failed on the old seed (a trip went 4 → 6 bookings) and passes on the fixed one.
 
 ## Live deployment (2026-11-15)
 

@@ -38,4 +38,23 @@ describe('seed script', () => {
       expect(res.body.data.user.role).toBe(role);
     }
   });
+
+  it('never adds a second set of demo bookings to a trip when re-run on a later day', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const perTrip = async () => new Map((await Booking.aggregate<{ _id: unknown; n: number }>([{ $match: { idempotencyKey: { $regex: '^seed-' } } }, { $group: { _id: '$tripId', n: { $sum: 1 } } }])).map((r) => [String(r._id), r.n]));
+    const before = await perTrip();
+    expect(before.size).toBeGreaterThan(0);
+
+    // Pretend the seed runs again tomorrow (only Date is faked; driver timers stay real).
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    try {
+      await seedDatabase();
+    } finally {
+      vi.useRealTimers();
+    }
+
+    const after = await perTrip();
+    for (const [tripId, n] of before) expect(after.get(tripId), tripId).toBe(n);
+  }, 180_000);
 });

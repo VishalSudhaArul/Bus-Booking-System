@@ -6,7 +6,7 @@ _Run date: 2026-11-13 · Node 22.20 · Windows 11_
 
 | Suite | Tool | Files | Tests | Result |
 |---|---|---|---|---|
-| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 8 | 108 | ✅ all passing |
+| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 8 | 109 | ✅ all passing |
 | Frontend (components, routing, redirects, redesign) | Vitest + React Testing Library (jsdom) | 4 | 53 | ✅ all passing |
 | Server TypeScript (`tsc --noEmit`) / ESLint / build | — | — | — | ✅ |
 | Client TypeScript (`tsc -b`) / ESLint / `vite build` | — | — | — | ✅ |
@@ -86,7 +86,7 @@ Fixture: operator A (12-seat bus, fare 1000) with 3 bookings / 5 seats, one 2-se
 
 ### Seed and utilities (`tests/seed.test.ts`, `tests/unit.test.ts`)
 
-Seed creates the full demo dataset, a second run creates **zero** new records, no seat is double-allocated, no PENDING bookings remain, and all three demo logins work · seat-layout generation (2+2 numbering/positions/premiums; two-deck sleeper) · fare rounding · PNR alphabet and uniqueness (500 draws) · IST day boundaries · Mongo-operator stripping · 404 envelope, malformed JSON 400, security headers, CORS allow/deny, OpenAPI served.
+Seed creates the full demo dataset, a second run creates **zero** new records, a re-run on a later day (clock faked) adds no bookings to trips that already have demo bookings, no seat is double-allocated, no PENDING bookings remain, and all three demo logins work · seat-layout generation (2+2 numbering/positions/premiums; two-deck sleeper) · fare rounding · PNR alphabet and uniqueness (500 draws) · IST day boundaries · Mongo-operator stripping · 404 envelope, malformed JSON 400, security headers, CORS allow/deny, OpenAPI served.
 
 ### Ladies-only seats, promo codes and filters (`tests/features.test.ts`, 9 tests; plus a pure promo test in `unit.test.ts`)
 

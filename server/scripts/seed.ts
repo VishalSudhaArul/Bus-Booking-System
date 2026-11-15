@@ -11,6 +11,7 @@ import mongoose from 'mongoose';
 import { connectDatabase, disconnectDatabase } from '../src/config/db';
 import { allModels, ensureIndexes } from '../src/config/models';
 import { hashPassword } from '../src/modules/auth/auth.service';
+import { Booking } from '../src/modules/bookings/booking.model';
 import { createBooking } from '../src/modules/bookings/booking.service';
 import { Bus } from '../src/modules/buses/bus.model';
 import { createBus } from '../src/modules/buses/bus.service';
@@ -231,6 +232,9 @@ export async function seedDatabase(reset = false) {
   for (const t of seededTrips) {
     // Past trips and the next week get bookings; later trips stay mostly empty.
     if (t.dayOffset > 7) continue;
+    // A trip is seeded once. Its plan depends on the run date (dayOffset), so
+    // re-seeding a trip on a later day would add a second, different set.
+    if (await Booking.exists({ tripId: t.tripId, idempotencyKey: { $regex: '^seed-' } })) continue;
     const rand = mulberry(t.route.code.length * 1000 + (t.dayOffset + 10) * 37 + t.route.fare);
     const trip = await Trip.findById(t.tripId).lean();
     if (!trip || trip.status === 'CANCELLED') continue;
