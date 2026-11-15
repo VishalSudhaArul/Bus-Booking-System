@@ -22,7 +22,7 @@ Interactive docs: **`/api/docs`** (Swagger UI) · machine-readable: **`/api/v1/o
 | 404 | `NOT_FOUND` | Missing resource (also returned for other passengers' bookings) |
 | 409 | `SEAT_ALREADY_BOOKED` (`details.seats`), `SEAT_UNAVAILABLE`, `TRIP_NOT_BOOKABLE`, `TRIP_DEPARTED`, `BOOKING_IN_PROGRESS`, `ALREADY_CANCELLED`, `EMAIL_EXISTS`, `DUPLICATE`, `BUS_SCHEDULE_CONFLICT`, `INVALID_TRIP_TRANSITION`, `TRIP_HAS_BOOKINGS`, `SEAT_IN_USE` | Conflicts with current state |
 | 413 | `PAYLOAD_TOO_LARGE` | Body over 100 kB |
-| 422 | `IDEMPOTENCY_KEY_REUSED`, `CANCELLATION_NOT_ALLOWED` | Well-formed but not allowed |
+| 422 | `IDEMPOTENCY_KEY_REUSED`, `CANCELLATION_NOT_ALLOWED`, `LADIES_ONLY_SEAT` | Well-formed but not allowed |
 | 429 | `RATE_LIMITED` | Too many requests |
 | 500 | `INTERNAL_ERROR` | Unexpected (details logged server-side only) |
 
@@ -48,7 +48,7 @@ Auth endpoints are rate-limited (30 per 15 min per IP by default).
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| GET | `/trips/search` | P | `from`, `to`, `date` (required); `passengers` 1–6; `sort` = `departure\|arrival\|price\|seats\|duration\|rating`; `order`; `busType` (CSV `SEATER,SEMI_SLEEPER,SLEEPER`); `ac`; `departureSlot` (CSV `EARLY,MORNING,AFTERNOON,NIGHT`); `maxPrice`; paging. Unknown city pair → empty list. `meta.facets` has bus types and price range. |
+| GET | `/trips/search` | P | `from`, `to`, `date` (required); `passengers` 1–6; `sort` = `departure\|arrival\|price\|seats\|duration\|rating`; `order`; `busType` (CSV `SEATER,SEMI_SLEEPER,SLEEPER`); `ac`; `departureSlot` (CSV `MORNING` 05–12, `AFTERNOON` 12–17, `EVENING` 17–21, `NIGHT` 21–05 IST); `maxPrice`; `minRating` (0–5); paging. Unknown city pair → empty list. `meta.facets` has bus types and price range. |
 | GET | `/trips/:id` | P | Trip, bus, operator, route, boarding/dropping points with times, availability |
 | GET | `/trips/:id/seats` | P | Live seat map: `layout` + every seat with `status` (`AVAILABLE\|BOOKED\|UNAVAILABLE`) and `fare`; `Cache-Control: no-store` |
 | GET | `/trips` | Op, Ad | Management list with `bookedSeats`, `totalSeats`, `occupancyPercent`; filters `status`, `routeId`, `busId`, `from`, `to` |
@@ -82,6 +82,7 @@ GET /api/v1/trips/search?from=Bengaluru&to=Chennai&date=2026-11-20&passengers=2&
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
+| POST | `/bookings/quote` | Pa | `{ tripId, seatIds[], promoCode? }` → authoritative `fare` (incl. `discount`) and seats with `ladiesOnly`; writes nothing. `400 INVALID_PROMO` / `PROMO_MIN_NOT_MET` |
 | POST | `/bookings` | Pa | Header **`Idempotency-Key`** (8–64 URL-safe chars) required. Body below. `201` new booking; `200` + `Idempotent-Replayed: true` for a repeat. |
 | GET | `/bookings/me` | Pa | Own bookings; `status`, `when=upcoming\|past` |
 | GET | `/bookings` | Op, Ad | Scoped list; `status`, `search` (PNR/email/phone), `tripId`, `operatorId` (admin) |
@@ -108,7 +109,7 @@ Content-Type: application/json
 }
 ```
 
-There are no price, status or PNR fields — the server computes them (`fare = baseFare × seats + seat premiums + GST`) and ignores anything extra.
+There are no price, status or PNR fields — the server computes them (`fare = baseFare × seats + seat premiums − promo discount + GST`) and ignores anything extra. An optional `promoCode` (e.g. `SAVE10`) is validated server-side. A passenger assigned to a ladies-only seat must have `gender: FEMALE`, otherwise `422 LADIES_ONLY_SEAT`.
 
 Seat conflict:
 
@@ -134,6 +135,7 @@ Operators cannot cancel individual bookings (`403`); they cancel the trip instea
 |---|---|---|---|
 | GET | `/cancellations` | Pa (own), Op (own trips), Ad (all) | Cancellations with refund amount, fee, status, reference, booking summary |
 | GET | `/cancellations/policy` | P | Current cut-off and refund tiers |
+| GET | `/promos` | P | Available promo codes (`code`, `description`, `minSubtotal`) |
 
 ### Network and fleet
 
@@ -146,7 +148,7 @@ Operators cannot cancel individual bookings (`403`); they cancel the trip instea
 | GET | `/buses/:id` | Op, Ad | Bus + full seat layout |
 | POST | `/buses` | Ad | `{ operatorId, name, registrationNumber, isAC, amenities[], layout: { template, rows, windowPremium?, lowerDeckPremium? } }`; templates `SEATER_2X2`, `SEATER_2X1`, `SEMI_SLEEPER_2X2`, `SLEEPER_2X1`, `SLEEPER_1X1` — seats are generated |
 | PATCH | `/buses/:id` | Ad | `{ name?, isAC?, amenities?, isActive? }` |
-| PATCH | `/buses/:id/seats/:seatId` | Ad | `{ isActive?, priceModifier? }`; cannot disable a seat booked on an upcoming trip (`409 SEAT_IN_USE`) |
+| PATCH | `/buses/:id/seats/:seatId` | Ad | `{ isActive?, priceModifier?, ladiesOnly? }`; cannot disable a seat booked on an upcoming trip (`409 SEAT_IN_USE`) |
 | GET | `/routes/popular` | P | City pairs ranked by bookings with lowest upcoming fare |
 | GET | `/routes`, `/routes/:id` | Op, Ad | Scoped |
 | POST | `/routes` | Ad | `{ operatorId, code, sourceCity, destinationCity, distanceKm, durationMinutes, stops: [{ stopId, type, offsetMinutes }] }`; all boarding points must precede dropping points |

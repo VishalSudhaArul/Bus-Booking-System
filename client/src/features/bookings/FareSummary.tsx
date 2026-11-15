@@ -31,6 +31,14 @@ export function FareBreakdown({ fare, seatCount, className, totalLabel = 'Total 
           <dd className="tabular font-medium text-ink-900">{formatCurrency(fare.seatCharges)}</dd>
         </div>
       )}
+      {!!fare.discount && fare.discount > 0 && (
+        <div className="flex justify-between gap-4 text-emerald-700">
+          <dt>
+            Promo <span className="font-mono text-xs font-bold">{fare.promoCode}</span>
+          </dt>
+          <dd className="tabular font-semibold">− {formatCurrency(fare.discount)}</dd>
+        </div>
+      )}
       <div className="flex justify-between gap-4">
         <dt className="text-ink-600">GST ({fare.taxPercent}%)</dt>
         <dd className="tabular font-medium text-ink-900">{formatCurrency(fare.taxes)}</dd>

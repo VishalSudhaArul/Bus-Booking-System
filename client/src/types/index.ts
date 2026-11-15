@@ -58,6 +58,7 @@ export interface Seat {
   seatType: BusType;
   position: 'WINDOW' | 'AISLE';
   priceModifier: number;
+  ladiesOnly?: boolean;
   isActive: boolean;
 }
 
@@ -145,6 +146,7 @@ export interface TripSeat {
   column: number;
   seatType: BusType;
   position: 'WINDOW' | 'AISLE';
+  ladiesOnly?: boolean;
   fare: number;
   status: SeatStatus;
 }
@@ -174,6 +176,8 @@ export interface ManagedTrip {
 export interface Fare {
   baseFare: number;
   seatCharges: number;
+  discount?: number;
+  promoCode?: string;
   taxPercent: number;
   taxes: number;
   total: number;
@@ -311,6 +315,17 @@ export interface AuditEntry {
   actorId?: { _id: string; name: string; email: string } | null;
   metadata?: Record<string, unknown>;
   createdAt: string;
+}
+
+export interface FareQuote {
+  fare: Fare;
+  seats: { seatId: string; seatNumber: string; fare: number; ladiesOnly: boolean }[];
+}
+
+export interface PromoOffer {
+  code: string;
+  description: string;
+  minSubtotal: number;
 }
 
 export interface PopularRoute {

@@ -9,8 +9,9 @@ import { homeFor, useAuth } from '@/features/auth/AuthContext';
 import { cn, initials } from '@/lib/utils';
 
 const NAV = [
-  { to: '/', label: 'Book tickets', end: true },
-  { to: '/help', label: 'Help & policies' },
+  { to: '/', label: 'Bus tickets', end: true },
+  { to: '/account/bookings', label: 'My bookings' },
+  { to: '/help', label: 'Help' },
 ];
 
 export function UserMenu({ tone = 'dark' }: { tone?: 'dark' | 'light' }) {
@@ -68,7 +69,7 @@ export function PublicLayout() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:shadow-raised">
         Skip to content
       </a>
-      <header className="no-print sticky top-0 z-40 border-b border-ink-100 bg-white/85 backdrop-blur-md">
+      <header className="no-print sticky top-0 z-40 border-b border-ink-200/70 bg-white/80 backdrop-blur-lg">
         <div className="container-page flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-8">
             <Logo />
@@ -78,7 +79,7 @@ export function PublicLayout() {
                   key={item.to}
                   to={item.to}
                   end={item.end}
-                  className={({ isActive }) => cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive ? 'bg-brand-50 text-brand-800' : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900')}
+                  className={({ isActive }) => cn('rounded-lg px-3 py-2 text-sm font-medium transition-colors', isActive ? 'bg-brand-50 text-brand-700' : 'text-ink-600 hover:bg-ink-100 hover:text-ink-900')}
                 >
                   {item.label}
                 </NavLink>
@@ -93,10 +94,10 @@ export function PublicLayout() {
             ) : (
               <div className="hidden items-center gap-2 sm:flex">
                 <Button variant="ghost" asChild>
-                  <Link to="/login">Sign in</Link>
+                  <Link to="/login">Log in</Link>
                 </Button>
                 <Button asChild>
-                  <Link to="/register">Create account</Link>
+                  <Link to="/register">Sign up</Link>
                 </Button>
               </div>
             )}
@@ -115,10 +116,10 @@ export function PublicLayout() {
             {!user && (
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Button variant="outline" asChild>
-                  <Link to="/login" onClick={() => setOpen(false)}>Sign in</Link>
+                  <Link to="/login" onClick={() => setOpen(false)}>Log in</Link>
                 </Button>
                 <Button asChild>
-                  <Link to="/register" onClick={() => setOpen(false)}>Create account</Link>
+                  <Link to="/register" onClick={() => setOpen(false)}>Sign up</Link>
                 </Button>
               </div>
             )}
@@ -130,7 +131,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="no-print mt-16 border-t border-ink-100 bg-ink-950 text-ink-300">
+      <footer className="no-print mt-20 border-t border-ink-200 bg-ink-900 text-ink-300">
         <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Logo tone="light" />

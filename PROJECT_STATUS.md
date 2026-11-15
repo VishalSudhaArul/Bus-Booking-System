@@ -16,6 +16,25 @@ _Last updated: 2026-11-15_
 | 8 | Tests (Vitest/Supertest/RTL), security, responsive checks | ✅ Done |
 | 9 | README, API docs, technical & testing reports, Vercel/Render config | ✅ Done |
 | 10 | Final verification and deployment | ✅ Done — verified locally, on MongoDB Atlas and live on Render + Vercel |
+| 11 | UI redesign (branch `feature/ui-redesign`) | ✅ Built and verified locally — **not merged or deployed yet** |
+
+## UI redesign (2026-11-15, branch `feature/ui-redesign`)
+
+Travel-tech look: Royal Blue `#2563EB` primary, slate neutrals on `#F8FAFC`, white `rounded-xl` cards, Plus Jakarta Sans; the admin/operator consoles inherit the theme through the design tokens.
+
+| View | What changed |
+|---|---|
+| Header + hero | Nav: Bus tickets · My bookings · Help · Log in/Sign up. Blue hero with a floating search card: From/To with a centre swap button, Departure date with **Today/Tomorrow** pills, seats, high-contrast **Search buses**. Hero stats come from live data. |
+| Results | Day strip (±3 days), sticky filter sidebar — **Morning/Afternoon/Evening/Night** pills, A/C · Non-A/C · Sleeper · Semi-sleeper · Seater, **price slider**, **operator rating** — plus sort. Horizontal cards: operator + rating badge, departure → duration → arrival timeline, **amenity icons**, “seats left” urgency tag, price, **Select seats**. |
+| Seat drawer | Expands inside the card: **Lower/Upper deck** toggle, seat-shaped icons and sleeper berths, **steering wheel** at the front, legend (Available, Selected, Booked, **Ladies only** in pink, Unavailable). Right summary: seat chips, boarding/dropping dropdowns, fare, **Continue to book**. |
+| Checkout | **Slide-over** (also usable as a page): passengers in seat order (ladies-only seats can only be assigned “Female”), contact, **promo code** input + offer chips, server-quoted fare card, simulated payment. Guests are sent to log in and land back in the slide-over. |
+| Boarding pass | Confirmation modal + ticket page: PNR, route timeline, passengers/seats, fare incl. promo, **real QR code** (links to the booking), **Download ticket** (print → Save as PDF). |
+
+Backend added to make these real (not cosmetic): `Seat.ladiesOnly` enforced at booking (`422 LADIES_ONLY_SEAT`) and editable by admins; promo codes `SAVE10`/`FLAT50` applied in `calculateFare()` before tax; `POST /bookings/quote` (authoritative fare); `GET /promos`; time-of-day slots Morning/Afternoon/Evening/Night; `minRating` filter. Seed marks two front seats per bus ladies-only (idempotent).
+
+Verified: server 108/108 tests, client 53/53, typecheck/lint/build clean. Browser walkthrough on the in-memory demo API (Atlas untouched): search → each filter → seat drawer (ladies seat + regular seat) → guest **Continue to book** → login → back into the slide-over → SAVE10 (₹150 capped) → booked (₹1,522.50) → boarding pass with QR → ticket page; admin layout editor toggled a ladies-only seat; no horizontal overflow at 375 px.
+
+To ship: merge into `main` (Vercel redeploys the web app), *Manual Deploy* the API on Render, then run `npm run seed` against Atlas once to mark the ladies-only seats.
 
 ## Live deployment (2026-11-15)
 

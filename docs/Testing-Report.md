@@ -6,8 +6,8 @@ _Run date: 2026-11-13 · Node 22.20 · Windows 11_
 
 | Suite | Tool | Files | Tests | Result |
 |---|---|---|---|---|
-| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 7 | 98 | ✅ all passing |
-| Frontend (components, routing, redirects) | Vitest + React Testing Library (jsdom) | 3 | 45 | ✅ all passing |
+| API (unit + integration) | Vitest + Supertest + mongodb-memory-server | 8 | 108 | ✅ all passing |
+| Frontend (components, routing, redirects, redesign) | Vitest + React Testing Library (jsdom) | 4 | 53 | ✅ all passing |
 | Server TypeScript (`tsc --noEmit`) / ESLint / build | — | — | — | ✅ |
 | Client TypeScript (`tsc -b`) / ESLint / `vite build` | — | — | — | ✅ |
 
@@ -87,6 +87,14 @@ Fixture: operator A (12-seat bus, fare 1000) with 3 bookings / 5 seats, one 2-se
 ### Seed and utilities (`tests/seed.test.ts`, `tests/unit.test.ts`)
 
 Seed creates the full demo dataset, a second run creates **zero** new records, no seat is double-allocated, no PENDING bookings remain, and all three demo logins work · seat-layout generation (2+2 numbering/positions/premiums; two-deck sleeper) · fare rounding · PNR alphabet and uniqueness (500 draws) · IST day boundaries · Mongo-operator stripping · 404 envelope, malformed JSON 400, security headers, CORS allow/deny, OpenAPI served.
+
+### Ladies-only seats, promo codes and filters (`tests/features.test.ts`, 9 tests; plus a pure promo test in `unit.test.ts`)
+
+Seat map exposes `ladiesOnly` · a male passenger on a ladies-only seat is rejected with `422 LADIES_ONLY_SEAT` and nothing is written; a female passenger succeeds · admins (not operators) can toggle the flag · `GET /promos` lists offers · the quote for SAVE10 (₹1,200 → ₹120 off → GST on ₹1,080 → ₹1,134) equals what the booking then charges · unknown codes (`INVALID_PROMO`) and codes below their minimum (`PROMO_MIN_NOT_MET`) are rejected · a promo change counts as a different request for idempotency · quotes need a signed-in passenger · time-of-day and minimum-rating filters return exactly the matching trips; the old `EARLY` slot is rejected.
+
+### UI redesign (`client/src/test/redesign.test.tsx`, 8 tests)
+
+Ladies-only seats are announced to assistive tech and selectable · driver icon at the front · legend shows the ladies swatch only when relevant · Today/Tomorrow pills set the date · promo discount line appears only when applied · amenity icons with accessible names and overflow count · rating badge label.
 
 ### Open-redirect regressions (`client/src/test/redirects.test.tsx`, 32 tests)
 

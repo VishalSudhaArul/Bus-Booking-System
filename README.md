@@ -2,7 +2,7 @@
 
 A full-stack, database-backed bus booking platform built for the ALGIONS AI LABS Full-Stack Web Development Internship assessment.
 
-- **Passengers** search trips, pick exact seats on a live seat map, enter passenger details, confirm a (simulated-payment) booking, get a printable e-ticket with a unique PNR, and cancel with a refund preview.
+- **Passengers** search trips with time-of-day, bus-type, price and rating filters, pick exact seats in an inline seat drawer (lower/upper decks, ladies-only seats), check out in a slide-over with promo codes, get a QR boarding pass with a unique PNR, and cancel with a refund preview.
 - **Operators** see only their own buses, routes, trips, bookings, passenger manifests, occupancy and refunds, and can schedule trips and change fares.
 - **Admins** manage operators, users, buses and seat layouts, stops, routes, trips and fares, and see network-wide bookings, cancellations, reports and an audit log.
 
@@ -25,7 +25,7 @@ Sign in with the [demo accounts](#demo-accounts) (the login page has one-click b
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui-style components (Radix primitives), React Router 7, TanStack Query, React Hook Form, Zod, Recharts, Lucide |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui-style components (Radix primitives), React Router 7, TanStack Query, React Hook Form, Zod, Recharts, Lucide, qrcode |
 | Backend | Node.js, Express 5, TypeScript, Mongoose 8, Zod 4, JWT (access) + rotating opaque refresh tokens, bcrypt (bcryptjs), Helmet, CORS, express-rate-limit |
 | Database | MongoDB Atlas (replica set → multi-document transactions); partial unique indexes, TTL index |
 | Testing | Vitest, Supertest, mongodb-memory-server (in-memory replica set), React Testing Library |
@@ -172,9 +172,19 @@ After deploying, open `https://<api>/health` (expect `"status":"ok","database":"
 
 bcrypt password hashing · short-lived JWT access token held in memory only · refresh token in an httpOnly, path-scoped cookie, stored server-side as an HMAC, rotated on every use with reuse detection · server-side role checks and operator/owner scoping on every endpoint · Zod validation (unknown fields stripped) and Mongo-operator stripping · Helmet headers · CORS allow-list · rate limits on auth, booking and the API overall · fares, statuses and availability always computed on the server · request logs without bodies, query strings or tokens · audit log of sensitive actions · secrets only in `.env` (git-ignored).
 
+## Promo codes
+
+Discounts are validated and applied only on the server (taken off the pre-tax fare):
+
+| Code | Offer |
+|---|---|
+| `SAVE10` | 10% off, up to ₹150 (fare of ₹300+ before tax) |
+| `FLAT50` | ₹50 off bookings of ₹500+ before tax |
+
 ## Known limitations
 
 - Payments and refunds are **simulated** (marked paid/processed immediately); no gateway integration by design.
+- "Download ticket" opens the browser print dialog (choose *Save as PDF*); tickets are not sent by email/SMS/WhatsApp.
 - No temporary seat *hold* during checkout: availability is re-checked at confirmation and the loser of a race is sent back to pick another seat (the seat map also refreshes every 15 s).
 - A booking is cancelled as a whole; cancelling individual passengers on a multi-seat booking is not supported.
 - Trip search sorts and filters one day's results in memory (fine for per-route daily volumes; a very large network would push this into an aggregation pipeline).

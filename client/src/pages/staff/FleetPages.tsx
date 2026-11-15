@@ -155,7 +155,7 @@ export function BusDetailPage() {
   const selected = seats.find((s) => s._id === selectedId) ?? null;
   useEffect(() => setPremium(String(selected?.priceModifier ?? 0)), [selected]);
 
-  const saveSeat = useSave<{ seat: Seat; body: { isActive?: boolean; priceModifier?: number } }>({
+  const saveSeat = useSave<{ seat: Seat; body: { isActive?: boolean; priceModifier?: number; ladiesOnly?: boolean } }>({
     mutationFn: ({ seat, body }) => adminApi.updateSeat(id, seat._id, body),
     success: 'Seat updated',
   });
@@ -218,7 +218,7 @@ export function BusDetailPage() {
                     className={cn(
                       'tabular relative flex items-center justify-center rounded-lg border text-[11px] font-bold transition-all disabled:cursor-default',
                       bus.busType === 'SLEEPER' ? 'h-16' : 'h-10',
-                      s.isActive ? 'border-ink-300 bg-white text-ink-700' : 'border-dashed border-ink-200 bg-ink-100 text-ink-300 line-through',
+                      !s.isActive ? 'border-dashed border-ink-200 bg-ink-100 text-ink-300 line-through' : s.ladiesOnly ? 'border-ladies-300 bg-ladies-50 text-ladies-700' : 'border-ink-300 bg-white text-ink-700',
                       isAdmin && 'hover:border-brand-500',
                       selectedId === s._id && 'border-brand-700 ring-2 ring-brand-500/30',
                     )}
@@ -232,6 +232,7 @@ export function BusDetailPage() {
             </div>
             <p className="mt-4 flex items-center justify-center gap-2 text-xs text-ink-500">
               <span className="size-1.5 rounded-full bg-accent-500" aria-hidden /> Seat carries a fare premium
+              <span className="ml-3 h-3 w-4 rounded-[4px] border border-ladies-300 bg-ladies-50" aria-hidden /> Ladies only
             </p>
           </CardContent>
         </Card>
@@ -269,13 +270,16 @@ export function BusDetailPage() {
                       <span className="tabular text-2xl font-extrabold">{selected.seatNumber}</span>
                       <StatusBadge status={selected.isActive ? 'ACTIVE' : 'INACTIVE'} />
                     </div>
-                    <p className="text-xs text-ink-500">{selected.position === 'WINDOW' ? 'Window' : 'Aisle'} · {selected.deck === 'LOWER' ? 'Lower' : 'Upper'} deck · currently +{formatCurrency(selected.priceModifier)}</p>
+                    <p className="text-xs text-ink-500">{selected.position === 'WINDOW' ? 'Window' : 'Aisle'} · {selected.deck === 'LOWER' ? 'Lower' : 'Upper'} deck · currently +{formatCurrency(selected.priceModifier)}{selected.ladiesOnly ? ' · reserved for women' : ''}</p>
                     <Field label="Fare premium (₹)" htmlFor="seat-premium" hint="Added to the trip's base fare for this seat">
                       <Input id="seat-premium" type="number" min={0} max={2000} value={premium} onChange={(e) => setPremium(e.target.value)} />
                     </Field>
                     <div className="grid gap-2">
                       <Button loading={saveSeat.isPending} disabled={Number(premium) === selected.priceModifier || Number(premium) < 0} onClick={() => saveSeat.mutate({ seat: selected, body: { priceModifier: Number(premium) } })}>
                         Save premium
+                      </Button>
+                      <Button variant="outline" disabled={saveSeat.isPending} onClick={() => saveSeat.mutate({ seat: selected, body: { ladiesOnly: !selected.ladiesOnly } })}>
+                        {selected.ladiesOnly ? 'Open to all passengers' : 'Reserve for women'}
                       </Button>
                       <Button variant="outline" disabled={saveSeat.isPending} onClick={() => saveSeat.mutate({ seat: selected, body: { isActive: !selected.isActive } })}>
                         {selected.isActive ? 'Mark out of service' : 'Return to service'}

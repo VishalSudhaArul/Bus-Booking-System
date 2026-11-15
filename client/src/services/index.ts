@@ -9,6 +9,8 @@ import type {
   Cancellation,
   CancellationPolicy,
   Dashboard,
+  FareQuote,
+  PromoOffer,
   ManagedTrip,
   Manifest,
   Operator,
@@ -43,6 +45,7 @@ export const catalogApi = {
   popularRoutes: () => api.get<PopularRoute[]>('/routes/popular'),
   operators: () => api.page<Operator>('/operators/public', { limit: 12 }),
   policy: () => api.get<CancellationPolicy>('/cancellations/policy'),
+  promos: () => api.get<PromoOffer[]>('/promos'),
 };
 
 export const tripApi = {
@@ -61,9 +64,11 @@ export interface BookingRequest {
   droppingStopId: string;
   contact: { email: string; phone: string };
   passengers: { seatId: string; name: string; age: number; gender: string }[];
+  promoCode?: string;
 }
 
 export const bookingApi = {
+  fareQuote: (body: { tripId: string; seatIds: string[]; promoCode?: string }) => api.post<FareQuote>('/bookings/quote', body),
   create: (body: BookingRequest, idempotencyKey: string) => api.post<Booking>('/bookings', body, { headers: { 'Idempotency-Key': idempotencyKey } }),
   mine: (params: Params) => api.page<BookingSummary>('/bookings/me', params),
   list: (params: Params) => api.page<BookingSummary>('/bookings', params),
@@ -94,7 +99,7 @@ export const adminApi = {
   bus: (id: string) => api.get<Bus>(`/buses/${id}`),
   createBus: (body: Record<string, unknown>) => api.post<Bus>('/buses', body),
   updateBus: (id: string, body: Record<string, unknown>) => api.patch<Bus>(`/buses/${id}`, body),
-  updateSeat: (busId: string, seatId: string, body: { isActive?: boolean; priceModifier?: number }) => api.patch<Seat>(`/buses/${busId}/seats/${seatId}`, body),
+  updateSeat: (busId: string, seatId: string, body: { isActive?: boolean; priceModifier?: number; ladiesOnly?: boolean }) => api.patch<Seat>(`/buses/${busId}/seats/${seatId}`, body),
 
   audit: (params: Params) => api.page<AuditEntry>('/audit', params),
 };

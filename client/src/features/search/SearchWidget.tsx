@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeftRight, CalendarDays, MapPin, Search, Users } from 'lucide-react';
+import { ArrowLeftRight, ArrowUpDown, CalendarDays, CircleDot, MapPin, Search, Users } from 'lucide-react';
 import { useId } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -29,21 +29,23 @@ interface Props {
   onSearch?: (values: SearchValues) => void;
 }
 
-const fieldBox = 'group relative flex min-w-0 flex-1 flex-col justify-center rounded-xl border border-transparent bg-ink-50 px-4 py-2.5 transition-colors focus-within:border-brand-500 focus-within:bg-white hover:bg-ink-100/70 focus-within:hover:bg-white';
-const fieldLabel = 'flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500';
-const fieldInput = 'w-full bg-transparent pt-0.5 text-[15px] font-semibold text-ink-950 placeholder:font-medium placeholder:text-ink-400 focus:outline-none';
+const field =
+  'group relative flex min-w-0 flex-1 flex-col justify-center rounded-xl border border-ink-200 bg-white px-4 py-2.5 transition-all hover:border-ink-300 focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-500/10';
+const fieldLabel = 'flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-500';
+const fieldInput = 'w-full bg-transparent pt-0.5 text-[15px] font-semibold text-ink-900 placeholder:font-medium placeholder:text-ink-400 focus:outline-none';
 
 export function SearchWidget({ defaults, variant = 'hero', onSearch }: Props) {
   const navigate = useNavigate();
   const id = useId();
   const { data: cities = [] } = useQuery({ queryKey: ['cities'], queryFn: catalogApi.cities, staleTime: 10 * 60_000 });
 
-  const { register, handleSubmit, setValue, getValues, formState } = useForm<z.input<typeof searchSchema>, unknown, SearchValues>({
+  const { register, handleSubmit, setValue, getValues, watch, formState } = useForm<z.input<typeof searchSchema>, unknown, SearchValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { from: defaults?.from ?? '', to: defaults?.to ?? '', date: defaults?.date ?? istDate(1), passengers: defaults?.passengers ?? 1 },
   });
   const errors = formState.errors;
   const firstError = errors.from?.message ?? errors.to?.message ?? errors.date?.message ?? errors.passengers?.message;
+  const date = watch('date');
 
   const submit = (values: SearchValues) => {
     if (onSearch) return onSearch(values);
@@ -56,29 +58,44 @@ export function SearchWidget({ defaults, variant = 'hero', onSearch }: Props) {
     setValue('to', from, { shouldValidate: formState.isSubmitted });
   };
 
+  const quickDates = [
+    { label: 'Today', value: istDate(0) },
+    { label: 'Tomorrow', value: istDate(1) },
+  ];
+
   return (
-    <form onSubmit={handleSubmit(submit)} noValidate aria-label="Search buses" className={cn('rounded-panel bg-white p-3 shadow-raised ring-1 ring-ink-100', variant === 'compact' && 'rounded-card shadow-card')}>
-      <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-        <div className="relative flex flex-1 flex-col gap-2 sm:flex-row">
-          <label className={fieldBox} htmlFor={`${id}-from`}>
+    <form
+      onSubmit={handleSubmit(submit)}
+      noValidate
+      aria-label="Search buses"
+      className={cn(
+        'rounded-2xl border border-white/60 bg-white/95 p-3 shadow-raised ring-1 ring-ink-900/5 backdrop-blur-xl sm:p-4',
+        variant === 'compact' && 'rounded-xl border-ink-200 bg-white p-3 shadow-card ring-0 backdrop-blur-none',
+      )}
+    >
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:items-stretch">
+        {/* From / To with a swap button straddling the gap */}
+        <div className="relative flex flex-1 flex-col gap-2.5 sm:flex-row">
+          <label className={field} htmlFor={`${id}-from`}>
             <span className={fieldLabel}>
-              <MapPin className="size-3.5" aria-hidden /> From
+              <CircleDot className="size-3.5 text-brand-600" aria-hidden /> From
             </span>
-            <input id={`${id}-from`} list={`${id}-cities`} placeholder="Departure city" autoComplete="off" aria-invalid={!!errors.from} className={fieldInput} {...register('from')} />
+            <input id={`${id}-from`} list={`${id}-cities`} placeholder="Leaving from" autoComplete="off" aria-invalid={!!errors.from} className={fieldInput} {...register('from')} />
           </label>
           <button
             type="button"
             onClick={swap}
             aria-label="Swap departure and destination"
-            className="absolute left-1/2 top-1/2 z-10 hidden size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-ink-200 bg-white text-ink-600 shadow-sm transition-transform hover:rotate-180 hover:text-brand-700 sm:flex"
+            className="absolute right-6 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-ink-200 bg-white text-ink-600 shadow-sm transition-all hover:border-brand-300 hover:text-brand-600 active:scale-95 sm:left-1/2 sm:right-auto sm:-translate-x-1/2"
           >
-            <ArrowLeftRight className="size-3.5" />
+            <ArrowLeftRight className="hidden size-4 sm:block" aria-hidden />
+            <ArrowUpDown className="size-4 sm:hidden" aria-hidden />
           </button>
-          <label className={cn(fieldBox, 'sm:pl-7')} htmlFor={`${id}-to`}>
+          <label className={field} htmlFor={`${id}-to`}>
             <span className={fieldLabel}>
-              <MapPin className="size-3.5" aria-hidden /> To
+              <MapPin className="size-3.5 text-brand-600" aria-hidden /> To
             </span>
-            <input id={`${id}-to`} list={`${id}-cities`} placeholder="Destination city" autoComplete="off" aria-invalid={!!errors.to} className={fieldInput} {...register('to')} />
+            <input id={`${id}-to`} list={`${id}-cities`} placeholder="Going to" autoComplete="off" aria-invalid={!!errors.to} className={fieldInput} {...register('to')} />
           </label>
           <datalist id={`${id}-cities`}>
             {cities.map((c) => (
@@ -86,16 +103,17 @@ export function SearchWidget({ defaults, variant = 'hero', onSearch }: Props) {
             ))}
           </datalist>
         </div>
-        <div className="flex gap-2">
-          <label className={cn(fieldBox, 'lg:w-44 lg:flex-none')} htmlFor={`${id}-date`}>
+
+        <div className="flex gap-2.5">
+          <label className={cn(field, 'lg:w-48 lg:flex-none')} htmlFor={`${id}-date`}>
             <span className={fieldLabel}>
-              <CalendarDays className="size-3.5" aria-hidden /> Journey date
+              <CalendarDays className="size-3.5 text-brand-600" aria-hidden /> Departure
             </span>
             <input id={`${id}-date`} type="date" min={istDate()} aria-invalid={!!errors.date} className={fieldInput} {...register('date')} />
           </label>
-          <label className={cn(fieldBox, 'w-28 flex-none')} htmlFor={`${id}-pax`}>
+          <label className={cn(field, 'w-24 flex-none')} htmlFor={`${id}-pax`}>
             <span className={fieldLabel}>
-              <Users className="size-3.5" aria-hidden /> Seats
+              <Users className="size-3.5 text-brand-600" aria-hidden /> Seats
             </span>
             <select id={`${id}-pax`} className={cn(fieldInput, 'cursor-pointer appearance-none')} {...register('passengers')}>
               {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -106,15 +124,35 @@ export function SearchWidget({ defaults, variant = 'hero', onSearch }: Props) {
             </select>
           </label>
         </div>
-        <Button type="submit" size="lg" variant={variant === 'hero' ? 'accent' : 'primary'} className="h-auto min-h-14 rounded-xl px-7 lg:min-w-40">
-          <Search /> Search buses
+
+        <Button type="submit" size="lg" className="h-auto min-h-14 rounded-xl px-8 text-base shadow-lg shadow-brand-600/25 lg:min-w-44">
+          <Search className="!size-5" /> Search buses
         </Button>
       </div>
-      {firstError && (
-        <p role="alert" className="px-2 pt-2.5 text-sm font-medium text-danger">
-          {firstError}
-        </p>
-      )}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2" role="group" aria-label="Quick date">
+          {quickDates.map((d) => (
+            <button
+              key={d.label}
+              type="button"
+              aria-pressed={date === d.value}
+              onClick={() => setValue('date', d.value, { shouldValidate: formState.isSubmitted })}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-semibold transition-all',
+                date === d.value ? 'border-brand-600 bg-brand-600 text-white shadow-sm' : 'border-ink-200 bg-white text-ink-600 hover:border-brand-300 hover:text-brand-700',
+              )}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        {firstError && (
+          <p role="alert" className="text-sm font-medium text-danger">
+            {firstError}
+          </p>
+        )}
+      </div>
     </form>
   );
 }

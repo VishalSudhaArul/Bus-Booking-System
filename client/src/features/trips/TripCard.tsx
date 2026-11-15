@@ -1,29 +1,30 @@
-import { ArrowRight, ChevronDown, MapPin, Snowflake, Star, Wind } from 'lucide-react';
+import { ChevronDown, Flame, MapPin, Snowflake, Star, Wind } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge, Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { SeatSelector, type SeatSelection } from '@/features/seats/SeatDrawer';
 import { busTypeLabel, cn, formatCurrency, formatDay, formatDuration, formatTime } from '@/lib/utils';
 import type { TripPoint, TripSearchResult } from '@/types';
+import { AmenityIcons } from './amenities';
 
 /** Departure → duration → arrival, used on trip cards, trip details and tickets. */
 export function JourneyLine({ departure, arrival, durationMinutes, from, to, className }: { departure: string; arrival: string; durationMinutes: number; from: string; to: string; className?: string }) {
   return (
-    <div className={cn('flex items-center gap-3 sm:gap-5', className)}>
+    <div className={cn('flex items-center gap-3 sm:gap-4', className)}>
       <div className="min-w-0">
-        <p className="tabular text-xl font-bold text-ink-950 sm:text-2xl">{formatTime(departure)}</p>
+        <p className="tabular text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">{formatTime(departure)}</p>
         <p className="truncate text-xs font-medium text-ink-500">{from}</p>
       </div>
       <div className="flex min-w-16 flex-1 flex-col items-center gap-1">
-        <span className="text-[11px] font-semibold text-ink-500">{formatDuration(durationMinutes)}</span>
-        <div className="flex w-full items-center gap-1" aria-hidden>
-          <span className="size-1.5 rounded-full border border-ink-400" />
-          <span className="h-px flex-1 bg-[repeating-linear-gradient(90deg,var(--color-ink-300)_0_4px,transparent_4px_8px)]" />
-          <span className="size-1.5 rounded-full bg-ink-400" />
+        <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold text-ink-600">{formatDuration(durationMinutes)}</span>
+        <div className="flex w-full items-center" aria-hidden>
+          <span className="size-2 rounded-full border-2 border-brand-600 bg-white" />
+          <span className="h-0.5 flex-1 bg-[repeating-linear-gradient(90deg,var(--color-ink-300)_0_5px,transparent_5px_9px)]" />
+          <span className="size-2 rounded-full bg-brand-600" />
         </div>
       </div>
       <div className="min-w-0 text-right">
-        <p className="tabular text-xl font-bold text-ink-950 sm:text-2xl">{formatTime(arrival)}</p>
+        <p className="tabular text-xl font-bold tracking-tight text-ink-900 sm:text-2xl">{formatTime(arrival)}</p>
         <p className="truncate text-xs font-medium text-ink-500">{to}</p>
       </div>
     </div>
@@ -49,63 +50,93 @@ export function StopList({ title, points }: { title: string; points: TripPoint[]
   );
 }
 
-export function TripCard({ trip, passengers }: { trip: TripSearchResult; passengers: number }) {
-  const [open, setOpen] = useState(false);
-  const few = trip.availableSeats <= 5;
+export function RatingBadge({ rating }: { rating: number }) {
+  const tone = rating >= 4.5 ? 'bg-emerald-600' : rating >= 4 ? 'bg-emerald-500' : rating >= 3.5 ? 'bg-amber-500' : 'bg-ink-500';
+  return (
+    <span className={cn('tabular inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold text-white', tone)} aria-label={`Rated ${rating.toFixed(1)} out of 5`}>
+      <Star className="size-3 fill-current" aria-hidden /> {rating.toFixed(1)}
+    </span>
+  );
+}
+
+interface TripCardProps {
+  trip: TripSearchResult;
+  open: boolean;
+  onToggle: () => void;
+  onContinue: (selection: SeatSelection) => void;
+  initial?: Partial<SeatSelection>;
+}
+
+export function TripCard({ trip, open, onToggle, onContinue, initial }: TripCardProps) {
+  const [showStops, setShowStops] = useState(false);
+  const few = trip.availableSeats <= 6;
   const overnight = formatDay(trip.departureTime) !== formatDay(trip.arrivalTime);
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-raised">
-      <div className="grid gap-5 p-5 xl:grid-cols-[1.1fr_1.4fr_auto] xl:items-center">
+    <Card className={cn('overflow-hidden transition-all duration-200', open ? 'border-brand-300 shadow-raised ring-4 ring-brand-500/10' : 'hover:border-ink-300 hover:shadow-raised')}>
+      <div className="grid gap-5 p-5 xl:grid-cols-[1.05fr_1.5fr_auto] xl:items-center">
+        {/* Operator */}
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-base font-bold text-ink-950">{trip.operator.name}</h3>
-            <span className="tabular inline-flex shrink-0 items-center gap-1 rounded-md bg-brand-700 px-1.5 py-0.5 text-xs font-bold text-white" aria-label={`Rated ${trip.operator.rating} out of 5`}>
-              <Star className="size-3 fill-current" aria-hidden /> {trip.operator.rating.toFixed(1)}
-            </span>
+            <h3 className="truncate text-base font-bold text-ink-900">{trip.operator.name}</h3>
+            <RatingBadge rating={trip.operator.rating} />
           </div>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-600">
-            {trip.bus.isAC ? <Snowflake className="size-3.5 text-blue-600" aria-hidden /> : <Wind className="size-3.5 text-ink-400" aria-hidden />}
+            {trip.bus.isAC ? <Snowflake className="size-3.5 text-brand-600" aria-hidden /> : <Wind className="size-3.5 text-ink-400" aria-hidden />}
             {busTypeLabel(trip.bus.busType, trip.bus.isAC)}
           </p>
-          <p className="mt-0.5 truncate text-xs text-ink-500">{trip.bus.name}</p>
+          <AmenityIcons amenities={trip.bus.amenities} className="mt-3" />
         </div>
 
+        {/* Timeline */}
         <div>
-          <JourneyLine departure={trip.departureTime} arrival={trip.arrivalTime} durationMinutes={trip.durationMinutes} from={trip.boardingPoints[0]?.name ?? trip.route.sourceCity} to={trip.droppingPoints.at(-1)?.name ?? trip.route.destinationCity} />
-          {overnight && <p className="mt-1 text-right text-[11px] font-medium text-ink-500">Arrives {formatDay(trip.arrivalTime)}</p>}
+          <JourneyLine
+            departure={trip.departureTime}
+            arrival={trip.arrivalTime}
+            durationMinutes={trip.durationMinutes}
+            from={trip.boardingPoints[0]?.name ?? trip.route.sourceCity}
+            to={trip.droppingPoints.at(-1)?.name ?? trip.route.destinationCity}
+          />
+          <div className="mt-2 flex items-center justify-between text-[11px] font-medium text-ink-500">
+            <button type="button" onClick={() => setShowStops((v) => !v)} aria-expanded={showStops} className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:text-brand-800">
+              <MapPin className="size-3.5" aria-hidden /> {trip.boardingPoints.length + trip.droppingPoints.length} stops
+              <ChevronDown className={cn('size-3.5 transition-transform', showStops && 'rotate-180')} aria-hidden />
+            </button>
+            {overnight && <span>Arrives {formatDay(trip.arrivalTime)}</span>}
+          </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-dashed border-ink-200 pt-4 xl:flex-col xl:items-end xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+        {/* Price + CTA */}
+        <div className="flex items-center justify-between gap-4 border-t border-ink-100 pt-4 xl:flex-col xl:items-end xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
           <div className="xl:text-right">
-            <p className="text-[11px] font-medium text-ink-500">{trip.minFare === trip.maxFare ? 'Per seat' : 'Starts from'}</p>
-            <p className="tabular text-2xl font-extrabold text-ink-950">{formatCurrency(trip.minFare)}</p>
-            <p className={cn('text-xs font-semibold', few ? 'text-warning' : 'text-success')}>{few ? `Only ${trip.availableSeats} seats left` : `${trip.availableSeats} seats available`}</p>
+            {few ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-inset ring-red-200">
+                <Flame className="size-3" aria-hidden /> Only {trip.availableSeats} seats left
+              </span>
+            ) : (
+              <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">{trip.availableSeats} seats left</span>
+            )}
+            <p className="mt-1.5 text-[11px] font-medium text-ink-500">{trip.minFare === trip.maxFare ? 'per seat' : 'from'}</p>
+            <p className="tabular text-2xl font-extrabold tracking-tight text-ink-900">{formatCurrency(trip.minFare)}</p>
           </div>
-          <Button asChild>
-            <Link to={`/trips/${trip._id}?passengers=${passengers}`}>
-              Select seats <ArrowRight />
-            </Link>
+          <Button onClick={onToggle} variant={open ? 'outline' : 'primary'} aria-expanded={open} className="min-w-32">
+            {open ? 'Hide seats' : 'Select seats'}
+            <ChevronDown className={cn('transition-transform duration-200', open && 'rotate-180')} />
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink-100 bg-ink-50/50 px-5 py-2.5">
-        <div className="flex flex-wrap gap-1.5">
-          {trip.bus.amenities.slice(0, 4).map((a) => (
-            <Badge key={a}>{a}</Badge>
-          ))}
-          {trip.bus.amenities.length > 4 && <Badge>+{trip.bus.amenities.length - 4} more</Badge>}
-        </div>
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-900">
-          <MapPin className="size-3.5" aria-hidden /> Boarding & dropping points
-          <ChevronDown className={cn('size-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
-        </button>
-      </div>
-      {open && (
-        <div className="grid animate-fade-up gap-6 border-t border-ink-100 px-5 py-4 sm:grid-cols-2">
+      {showStops && (
+        <div className="grid animate-drawer gap-6 border-t border-ink-100 bg-ink-50/50 px-5 py-4 sm:grid-cols-2">
           <StopList title="Boarding points" points={trip.boardingPoints} />
           <StopList title="Dropping points" points={trip.droppingPoints} />
+        </div>
+      )}
+
+      {/* Inline seat-selection drawer */}
+      {open && (
+        <div className="animate-drawer border-t border-ink-200 bg-white px-5 py-5">
+          <SeatSelector tripId={trip._id} boardingPoints={trip.boardingPoints} droppingPoints={trip.droppingPoints} initial={initial} onContinue={onContinue} onClose={onToggle} />
         </div>
       )}
     </Card>
